@@ -33,7 +33,7 @@ AOP 领域中的特性术语：
 例子如下：
 
 ```java
-public class Application {
+public class 配置类配置示例Application {
   
     //声明被代理对象
     @Component
@@ -48,7 +48,7 @@ public class Application {
     @EnableAspectJAutoProxy
     static class Intercepter{
 
-        @Before("execution(* com.mjy.spring.aop.Application..*.*(..))")
+        @Before("execution(* com.mjy.spring.aop.配置类配置示例Application..*.*(..))")
         public void before(){
             System.out.println("Aspect: 预备。。。");
         }
@@ -71,10 +71,18 @@ public class Application {
 
 ![image.png](./assets/1646186373142-image.png)
 
+从名字就可以知道，ProxyFactory 是一个创建代理的工厂，里面提供了创建一个代理所需要的材料。从继承上看，ProxyFactory本身也是一个配置类，我们看下一些配置。
+
+
+| 序号 | 参数            | 类型            | 说明                                                     |
+| ------ | ----------------- | ----------------- | ---------------------------------------------------------- |
+| 1    | aopProxyFactory | AopProxyFactory | 默认是DefaultAopProxyFactory，获取真正的JDK或者CGLIB工厂 |
+| 2    | advisors        | List<Advisor>   | 本质就是advice的实现类。                                 |
+
 我们也可以通过 ProxyFactory 来手动创建代理。首先看一个
 
 ```java
-public class Application {
+public class 配置类配置示例Application {
     static class Duck{
         public void run(){
             System.out.println("小鸭快跑");
@@ -114,6 +122,7 @@ public class Application {
         proxyFactory.addAdvisor(new DefaultPointcutAdvisor(afterReturningAdvice));
         Duck proxyDuck = (Duck) proxyFactory.getProxy();
         proxyDuck.run();
+  
         //输出：
         //前置通知
         //环绕通知前

@@ -4,7 +4,7 @@
 
 当我们使用Spring框架实现我们业务的时候，Spring Aop是一个绕不开的话题。当我们使用Spring的@Transactional，@EnableCaching等注解的时候，底层是由AOP在发挥作用。因此当我们了解了Spring AOP，使用Spring的时候就会更加熟练。
 
-# JAVA reflect
+# 1. JAVA reflect
 
 JAVA是面向对象编程的，因此我们学习和工作的过程中，常常会先定义一个类，然后创建类的对象，通过对象来实现我们的业务逻辑。在这个过程中，我们常常忘记类本身也是一个对象，也有他的方法和属性。
 
@@ -151,6 +151,10 @@ class MethodClass{
 [java反射机制深入理解剖析](https://www.w3cschool.cn/java/java-reflex.html)
 
 #代理
+
+##参考
+1. [cglib动态代理中invokeSuper和invoke的区别](https://blog.csdn.net/z69183787/article/details/106878203)
+
 代理分为静态代理和动态代理。
 
 静态代理: 由程序员创建或工具生成代理类的源码，再编译代理类。所谓静态也就是在程序运行前就已经存在代理类的字节码文件，代理类和委托类的关系在运行前就确定了。
@@ -430,7 +434,7 @@ public class CglibProxyTest {
 }
 ```
 
-生成的代理类如下：
+### Cglib生成的代理类反编译
 
 ```java
 import java.lang.reflect.Method;

@@ -16,8 +16,14 @@ import java.lang.reflect.Method;
 public class CglibProxyTest {
 
      static class CglibService {
-        public void update(){
-            System.out.println("原方法-更新");
+         int a = 0;
+
+         public void setA(int a) {
+             this.a = a;
+         }
+
+         public void update(){
+            System.out.println("原方法-更新 a="+a);
         }
 
         public Object find(){
@@ -38,22 +44,25 @@ public class CglibProxyTest {
         @Override
         public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
             System.out.println("执行代理方法--前 方法为"+method.getName());
-            Object invoke = method.invoke(o, objects);
+//            Object invoke = method.invoke(target, objects);
+            Object invoke = methodProxy.invoke(target, objects);
+//            Object invoke = methodProxy.invokeSuper(o, objects);
+
             System.out.println("执行代理方法--后 ");
             return invoke;
         }
     }
 
     public static void main(String[] args) {
-        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,"./");
+//        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,"./");
         CglibService cglibService = new CglibService();
+        cglibService.setA(1);
         CglibServiceInterceptor cglibServiceInterceptor = new CglibServiceInterceptor(cglibService);
 
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(cglibService.getClass());
         enhancer.setCallback(cglibServiceInterceptor);
         CglibService proxyInstance = (CglibService) enhancer.create();
-
         proxyInstance.update();
     }
 
