@@ -54,7 +54,7 @@ public class CglibProxyTest {
     }
 
     public static void main(String[] args) {
-//        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,"./");
+        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,"./");
         CglibService cglibService = new CglibService();
         cglibService.setA(1);
         CglibServiceInterceptor cglibServiceInterceptor = new CglibServiceInterceptor(cglibService);
@@ -64,6 +64,7 @@ public class CglibProxyTest {
         enhancer.setCallback(cglibServiceInterceptor);
         CglibService proxyInstance = (CglibService) enhancer.create();
         proxyInstance.update();
+        proxyInstance.find();
     }
 
 }

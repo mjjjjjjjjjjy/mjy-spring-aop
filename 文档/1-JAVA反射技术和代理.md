@@ -2,7 +2,9 @@
 
 # 前言
 
-当我们使用Spring框架实现我们业务的时候，Spring Aop是一个绕不开的话题。当我们使用Spring的@Transactional，@EnableCaching等注解的时候，底层是由AOP在发挥作用。因此当我们了解了Spring AOP，使用Spring的时候就会更加熟练。
+当我们使用Spring框架实现我们业务的时候，Spring Aop是一个绕不开的话题。当我们使用Spring的@EnableAspectJAutoProxy，@EnableCaching等注解的时候，底层是由AOP在发挥作用。因此当我们了解了Spring AOP，使用Spring的时候就会更加熟练。
+
+Spring AOP 的底层是动态代理，包括JDK代理和CGLIB代理，其中动态代理，又涉及到反射，因此本文从反射开始讲起。
 
 # 1. JAVA reflect
 
@@ -29,7 +31,7 @@ JAVA是面向对象编程的，因此我们学习和工作的过程中，常常�
 2. 调用某个类的class属性。例如User.class。
 3. 调用某个对象的getClass()方法。该方法是java.lang.Object方法。是一个native方法。
 
-那么Class对象有什么作用呢？从前面可以知道，一个class文件通过jvm的加载成为一个Class对象，反过来可以认为，Class对象是class文件在内存中的体现。显而易见，Class对象包含一个类的所有定义，如继承了什么类，实现了哪些接口，拥有的属性、构造函数、方法等。
+那么Class对象有什么作用呢？从前面可以知道，一个磁盘上的class文件通过jvm的加载成为一个内存里面的Class对象，反过来可以认为，Class对象是class文件在内存中的体现。显而易见，Class对象包含一个类的所有定义，如继承了什么类，实现了哪些接口，拥有的属性、构造函数、方法等。
 
 那Class对象和反射有什么关系呢？
 
@@ -50,13 +52,14 @@ JAVA是面向对象编程的，因此我们学习和工作的过程中，常常�
 ##反射机制中常用的类
 
 
-| 类                            | 说明   |
-| ------------------------------- | -------- |
-| java.lang.Class               | 类     |
+| 类                            | 说明 |
+| ------------------------------- |----|
+| java.lang.Class               | 类  |
 | java.lang.reflect.Constructor | 构造器 |
-| java.lang.reflect.Field       | 属性   |
-| java.lang.reflect.Method      | 方法   |
+| java.lang.reflect.Field       | 属性 |
+| java.lang.reflect.Method      | 方法 |
 | java.lang.reflect.Modifier    | 修饰符 |
+| java.lang.annotation.Annotation | 注解 |
 
 以上类都在rt.ja包下
 
@@ -105,12 +108,12 @@ class ClassA {
 ## Class类中的method方法
 
 
-| 序号 | 方法                                                           | 作用                                                         |
-| ------ | ---------------------------------------------------------------- | -------------------------------------------------------------- |
-| 1    | Method getMethod(String name, Class... parameterTypes)         | 查找public修饰符的指定方法，包含父类和接口                   |
-| 2    | Method[] getMethods()                                          | 获取所有的public修饰的方法，包含父类和接口                   |
-| 3    | Method getDeclaredMethod(String name, Class... parameterTypes) | 查找指定的方法，包含接口，但是不包含父类                     |
-| 4    | Method[] getDeclaredMethods()                                  | 获取任意修饰符的的方法，包含接口的方法，但是不包含父类的方法 |
+| 序号  | 方法                                                             | 作用                             |
+|-----|----------------------------------------------------------------|--------------------------------|
+| 1   | Method getMethod(String name, Class... parameterTypes)         | 查找public修饰符的指定方法，包含父类和接口       |
+| 2   | Method[] getMethods()                                          | 获取所有的public修饰的方法，包含父类和接口       |
+| 3   | Method getDeclaredMethod(String name, Class... parameterTypes) | 查找指定的方法，包含接口，但是不包含父类           |
+| 4   | Method[] getDeclaredMethods()                                  | 获取任意修饰符的的方法，包含接口的方法，但是不包含父类的方法 |
 
 java.lang.reflect.Method 常用于对某个对象的方法进行增强的情况。具体用法如下：
 
@@ -148,19 +151,139 @@ class MethodClass{
 }
 ```
 
-[java反射机制深入理解剖析](https://www.w3cschool.cn/java/java-reflex.html)
+## Class类中获取注解的方法
+参考：[AnnotatedElement](https://www.jianshu.com/p/953e26463fbc)
+
+Class实现了AnnotatedElement接口，提供了若干获取类上注解的方法。
+
+
+| 序号  | 方法                                                                                | 作用                |
+|-----|-----------------------------------------------------------------------------------|-------------------|
+| 1   | Annotation[] getAnnotations()                                                     | 获取本类和父类可继承的所有注解   |
+| 2   | <A extends Annotation> A getAnnotation(Class<A> annotationClass)                  | 根据类型获取注解          |
+| 3   | <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass)         | 会检查修饰该方法对象的注解是否为可重复类型注解，如果是则会返回修饰该方法对象的一个或多个注解      |
+| 4   | <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass)          | 只获取本类的注解，忽略继承来的注解 |
+| 5   | <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) | 只获取本类的注解，忽略继承来的注解 |
+| 6   | boolean isAnnotationPresent(Class<? extends Annotation> annotationClass)          | 判断注解是否存在          |
+
+需要说明的是，java.lang.annotation.Annotation是所有注解的父接口，就像Obect的角色一样。
+
+Class类中有一个内部类
+
+```java
+private static class AnnotationData {
+        //包含父类可继承的注解
+        final Map<Class<? extends Annotation>, Annotation> annotations;
+        //只包含本类的注解
+        final Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+}
+```
+应用举例
+```java
+public class 获取注解 {
+
+    @Target({ElementType.TYPE,ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    private @interface CustomAnnotation {
+        String value();
+    }
+
+    @CustomAnnotation("测试类注解")
+    private static class AnnotationClass {
+
+        @CustomAnnotation("测试方法注解")
+        public void test(){
+        }
+    }
+
+    public static void main(String[] args) {
+        Class<AnnotationClass> annotationClassClass = AnnotationClass.class;
+        Annotation[] annotations = annotationClassClass.getAnnotations();
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof CustomAnnotation){
+                System.out.println(((CustomAnnotation)annotation).value());
+                //输出：  测试类注解
+            }
+        }
+
+        Method[] methods = annotationClassClass.getMethods();
+        for (Method method : methods) {
+            Annotation[] methodAnnotations = method.getAnnotations();
+            for (Annotation methodAnnotation : methodAnnotations) {
+                if (methodAnnotation instanceof CustomAnnotation){
+                    System.out.println(((CustomAnnotation)methodAnnotation).value());
+                    //输出：  测试方法注解
+                }
+            }
+
+        }
+    }
+}
+
+```
+
+## 反射在实际项目中的使用举例
+
+一个经典的用法是从一个类的集合中获取标注了某个注解的方法，并执行。比如遍历Spring的bean容器中所有的bean，对符合条件的实例，进行特殊处理。
+
+简单举例如下：
+
+```java
+public class 反射在实际项目中的应用 {
+
+    @Target({ElementType.TYPE,ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    private @interface CustomAnnotation {
+        String value();
+    }
+
+    private static class AnnotationClass {
+        @CustomAnnotation("测试方法注解")
+        public void test(){
+            System.out.println("执行成功。。。。");
+        }
+    }
+
+    private static class ClassA {
+    }
+
+    public static List<Object> objects = new ArrayList();
+
+    static {
+        //实例1
+        objects.add(new ClassA());
+        //实例2
+        objects.add(new AnnotationClass());
+    }
+
+    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException {
+        //从一个类的集合中获取标注了某个注解的方法，并执行。
+        for (Object object : objects) {
+            Method[] methods = object.getClass().getMethods();
+            for (Method method : methods) {
+                boolean annotationPresent = method.isAnnotationPresent(CustomAnnotation.class);
+                if (annotationPresent){
+                    method.invoke(object);
+                    //输出： 执行成功。。。。
+                }
+            }
+        }
+    }
+}
+```
 
 #代理
 
+在java中，代理的本质是在不影响目标类功能的基础上对目标类进行增强。
+
 ##参考
-1. [cglib动态代理中invokeSuper和invoke的区别](https://blog.csdn.net/z69183787/article/details/106878203)
 
 代理分为静态代理和动态代理。
 
-静态代理: 由程序员创建或工具生成代理类的源码，再编译代理类。所谓静态也就是在程序运行前就已经存在代理类的字节码文件，代理类和委托类的关系在运行前就确定了。
+静态代理: 所谓静态也就是在程序运行前就已经存在代理类的字节码文件，代理类和委托类的关系在运行前就确定了。
 动态代理：动态代理类的源码是在程序运行期间由JVM根据反射等机制动态的生成，所以不存在代理类的字节码文件。代理类和委托类的关系是在程序运行时确定。
 
-## 静态代理static proxy
+## 静态代理（static proxy）
 
 静态代理最明显的特征是需要我们写一个代理类。与被代理类共同实现一个接口。
 
@@ -227,9 +350,7 @@ JDK代理的核心类为java.lang.reflect.Proxy。其中方法并不是很多。
 其中核心方法为：
 
 ```java
-public static Object newProxyInstance(ClassLoader loader,
-                                          Class<?>[] interfaces,
-                                          InvocationHandler h){
+public static Object newProxyInstance(ClassLoader loader, Class<?>[] interfaces, InvocationHandler h){
     //...
 }
 ```
@@ -269,13 +390,10 @@ public class JDK动态代理最简单示例 {
     }
     //实现InvocationHandler
     private static class PrinterInvocation implements InvocationHandler {
-
         private Object target;
-
         public PrinterInvocation(Object target) {
             this.target = target;
         }
-  
         //实现增强的地方
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -299,15 +417,18 @@ public class JDK动态代理最简单示例 {
 }
 ```
 
+#### JDK反编译类
 生成的代理类反编译如下：
 
 ```java
+
 final class $Proxy0 extends Proxy implements Printer {
+    
     private static Method m1;
     private static Method m3;
     private static Method m2;
     private static Method m0;
-
+    // 提供了一个带参数的狗仔器，将InvocationHandler传入给父类
     public $Proxy0(InvocationHandler var1) throws Throwable{
         super(var1);
     }
@@ -367,8 +488,139 @@ final class $Proxy0 extends Proxy implements Printer {
 }
 ```
 
-可以看到，代理类继承了Proxy类，在实例化的时候把 InvocationHandler 赋予父类实例。另外定义了一定数量的Method变量，初始化再static的代码块，里面初始化了Object类和接口Printer的所有方法。
+可以看到，代理类继承了Proxy类，在实例化的时候把 InvocationHandler 赋予父类实例。另外定义了一定数量的Method变量，在static的代码块初始化了Object类和接口Printer的所有方法。
 另外代理类实现了Printer接口的所有方法，每个方法，实际是去调用了InvocationHandler实例的invoke方法，这样就实现了代理的功能。
+
+
+
+#### Proxy 类如何生成代理类
+查看 Proxy 代码，很容易找到代理类是由ProxyClassFactory类具体生成的。
+最重要的代码是
+```java
+byte[] proxyClassFile = ProxyGenerator.generateProxyClass(proxyName, interfaces, accessFlags);
+```
+参考 [java动态代理ProxyGenerator](https://www.cnblogs.com/Joynic/p/13741473.html) 手动写一个demo
+
+```java
+public class ProxyGeneratorTest {
+
+    private static interface TestInf{
+        void run();
+    }
+
+    public static void main(String[] args) {
+        //全限定类名
+        String className = "com.sun.$Proxy";
+
+        int accessFlags = Modifier.PUBLIC | Modifier.FINAL;
+        //接口
+        Class<?>[] cls = new Class<?>[]{TestInf.class};
+
+        byte[] bytes = ProxyGenerator.generateProxyClass(className, cls, accessFlags);
+
+        System.out.println("byteLen: " + bytes.length);
+        //生成的字节码地址
+        String first = System.getProperty("user.dir") + "/$Proxy.class";
+        System.out.println(first);
+        Path path = Paths.get(first);
+        try {
+            Files.createFile(path);
+            OutputStream outputStream = Files.newOutputStream(path, StandardOpenOption.WRITE);
+            outputStream.write(bytes);
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+输出的类反编译
+
+```java
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by FernFlower decompiler)
+//
+
+package com.sun;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
+import 代理模式.JDK动态代理.ProxyGeneratorTest.TestInf;
+
+public class $Proxy extends Proxy implements TestInf {
+    private static Method m1;
+    private static Method m3;
+    private static Method m2;
+    private static Method m0;
+
+    public $Proxy(InvocationHandler var1) throws  {
+        super(var1);
+    }
+
+    public final boolean equals(Object var1) throws  {
+        try {
+            return (Boolean)super.h.invoke(this, m1, new Object[]{var1});
+        } catch (RuntimeException | Error var3) {
+            throw var3;
+        } catch (Throwable var4) {
+            throw new UndeclaredThrowableException(var4);
+        }
+    }
+
+    public final void run() throws  {
+        try {
+            super.h.invoke(this, m3, (Object[])null);
+        } catch (RuntimeException | Error var2) {
+            throw var2;
+        } catch (Throwable var3) {
+            throw new UndeclaredThrowableException(var3);
+        }
+    }
+
+    public final String toString() throws  {
+        try {
+            return (String)super.h.invoke(this, m2, (Object[])null);
+        } catch (RuntimeException | Error var2) {
+            throw var2;
+        } catch (Throwable var3) {
+            throw new UndeclaredThrowableException(var3);
+        }
+    }
+
+    public final int hashCode() throws  {
+        try {
+            return (Integer)super.h.invoke(this, m0, (Object[])null);
+        } catch (RuntimeException | Error var2) {
+            throw var2;
+        } catch (Throwable var3) {
+            throw new UndeclaredThrowableException(var3);
+        }
+    }
+
+    static {
+        try {
+            m1 = Class.forName("java.lang.Object").getMethod("equals", Class.forName("java.lang.Object"));
+            m3 = Class.forName("代理模式.JDK动态代理.ProxyGeneratorTest$TestInf").getMethod("run");
+            m2 = Class.forName("java.lang.Object").getMethod("toString");
+            m0 = Class.forName("java.lang.Object").getMethod("hashCode");
+        } catch (NoSuchMethodException var2) {
+            throw new NoSuchMethodError(var2.getMessage());
+        } catch (ClassNotFoundException var3) {
+            throw new NoClassDefFoundError(var3.getMessage());
+        }
+    }
+}
+
+```
+#### ProxyGenerator
+[源码](https://github.com/JetBrains/jdk8u_jdk/blob/master/src/share/classes/sun/misc/ProxyGenerator.java)
+具体代码就不展示了。可以参考
+[JDK动态代理之ProxyGenerator生成代理类的字节码文件解析](https://www.jb51.net/article/135597.htm)
+
+
 
 ### Cglib动态代理。
 
@@ -434,7 +686,8 @@ public class CglibProxyTest {
 }
 ```
 
-### Cglib生成的代理类反编译
+#### Cglib生成的代理类反编译
+
 
 ```java
 import java.lang.reflect.Method;
@@ -470,6 +723,7 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
     static void CGLIB$STATICHOOK1() {
         CGLIB$THREAD_CALLBACKS = new ThreadLocal();
         CGLIB$emptyArgs = new Object[0];
+        //代理的Class
         Class var0 = Class.forName("代理模式.Cglib代理.CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a");
         Class var1;
         Method[] var10000 = ReflectUtils.findMethods(new String[]{"equals", "(Ljava/lang/Object;)Z", "toString", "()Ljava/lang/String;", "hashCode", "()I", "clone", "()Ljava/lang/Object;"}, (var1 = Class.forName("java.lang.Object")).getDeclaredMethods());
@@ -481,8 +735,10 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
         CGLIB$hashCode$4$Proxy = MethodProxy.create(var1, var0, "()I", "hashCode", "CGLIB$hashCode$4");
         CGLIB$clone$5$Method = var10000[3];
         CGLIB$clone$5$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/Object;", "clone", "CGLIB$clone$5");
+        //注意，这里var10000 和var1重新赋值了
         var10000 = ReflectUtils.findMethods(new String[]{"update", "()V", "find", "()Ljava/lang/Object;"}, (var1 = Class.forName("代理模式.Cglib代理.CglibProxyTest$CglibService")).getDeclaredMethods());
         CGLIB$update$0$Method = var10000[0];
+        //生成了一个方法的代理，传入了代理类的Class,被代理类的Class, 代理类的方法名，被代理类的方法名
         CGLIB$update$0$Proxy = MethodProxy.create(var1, var0, "()V", "update", "CGLIB$update$0");
         CGLIB$find$1$Method = var10000[1];
         CGLIB$find$1$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/Object;", "find", "CGLIB$find$1");
@@ -646,7 +902,7 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
                     return;
                 }
             }
-
+            //给类变量赋值。CGLIB$CALLBACK_0为第一个callback
             var1.CGLIB$CALLBACK_0 = (MethodInterceptor)((Callback[])var10000)[0];
         }
 
@@ -718,12 +974,384 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
 
 可以看到，代理类继承了CglibService类，重写了父类的方法，在调用父类的方法时，具体由MethodInterceptor的实现类去完成。
 
+另外，相比较JDK代理，CGLIB拦截器中方法中多了一个参数 MethodProxy。前面我们知道，在JDK代理的拦截器中，如果需要调用实例，只能使反射的方式。而在CGLIB中，MethodProxy提供给了被代理实例和代理实例直接调用方法的方式。
+
+其原理也挺简单的，使用ASM再动态生成一个包装类，根据签名对目标类的方法进行了编号。在目标类实例想调用指定的方法的时候，只要传入编号和参数即可。伪代码如下：
+
+```java
+public class FastClassDemo {
+    //在代理拦截器处被调用
+	public Object invoke(int index, Object o, Object[] ol) {
+		Target t = (Target) o;
+		switch (index) {
+		case 1:
+            //方法1 有返回值
+			return t.f();
+		case 2:
+            //方法2 没有返回值
+			t.g();
+			return null;
+		}
+		return null;
+	}
+    //将方法通过一定的方法，生成唯一的签名，可以存储到上层类中
+	public int getIndex(String signature) {
+		switch (signature.hashCode()) {
+		case 3078479:
+            //方法1
+			return 1;
+		case 3108270:
+            //方法1
+			return 2;
+		}
+		return -1;
+	}
+}
+```
+
+#### MethodProxy 类
+
+```java
+package net.sf.cglib.proxy;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import net.sf.cglib.core.AbstractClassGenerator;
+import net.sf.cglib.core.CodeGenerationException;
+import net.sf.cglib.core.GeneratorStrategy;
+import net.sf.cglib.core.NamingPolicy;
+import net.sf.cglib.core.Signature;
+import net.sf.cglib.reflect.FastClass;
+
+public class MethodProxy {
+    //被代理类的方法签名
+    private Signature sig1;
+    //代理类的方法签名
+    private Signature sig2;
+    //创建代理的参数
+    private CreateInfo createInfo;
+    
+    private final Object initLock = new Object();
+    private volatile FastClassInfo fastClassInfo;
+    
+    /**
+     * c1 被代理类的Class c2 代理类的Class  desc：参数和返回值  name1： 被代理类的方法名，代理类重写， name2为代理类的方法名，直接调用父类方法。
+     */
+    public static MethodProxy create(Class c1, Class c2, String desc, String name1, String name2) {
+        //封装了参数，但是此时还没有初始化
+        MethodProxy proxy = new MethodProxy();
+        proxy.sig1 = new Signature(name1, desc);
+        proxy.sig2 = new Signature(name2, desc);
+        proxy.createInfo = new CreateInfo(c1, c2);
+        return proxy;
+    }
+
+    /**
+     * 初始化FastClass，
+     */
+    private void init()
+    {
+       
+        if (fastClassInfo == null)
+        {
+            synchronized (initLock)
+            {
+                if (fastClassInfo == null)
+                {
+                    CreateInfo ci = createInfo;
+
+                    FastClassInfo fci = new FastClassInfo();
+                    //被代理类的Class，给原始被代理类实例调用
+                    fci.f1 = helper(ci, ci.c1);
+                    //处理代理类的Class，给原始代理类实例调用
+                    fci.f2 = helper(ci, ci.c2);
+                    //获取索引
+                    fci.i1 = fci.f1.getIndex(sig1);
+                    //说去所以
+                    fci.i2 = fci.f2.getIndex(sig2);
+                    fastClassInfo = fci;
+                    createInfo = null;
+                }
+            }
+        }
+    }
+
+    private static class FastClassInfo
+    {
+        FastClass f1;
+        FastClass f2;
+        int i1;
+        int i2;
+    }
+    //该类用于组织参数
+    private static class CreateInfo
+    {
+        //被代理类的Class
+        Class c1;
+        // 代理类的Class
+        Class c2;
+        NamingPolicy namingPolicy;
+        GeneratorStrategy strategy;
+        boolean attemptLoad;
+        
+        public CreateInfo(Class c1, Class c2)
+        {
+            this.c1 = c1;
+            this.c2 = c2;
+            AbstractClassGenerator fromEnhancer = AbstractClassGenerator.getCurrent();
+            if (fromEnhancer != null) {
+                namingPolicy = fromEnhancer.getNamingPolicy();
+                strategy = fromEnhancer.getStrategy();
+                attemptLoad = fromEnhancer.getAttemptLoad();
+            }
+        }
+    }
+
+    //动态生成FastClass子类
+    private static FastClass helper(CreateInfo ci, Class type) {
+        FastClass.Generator g = new FastClass.Generator();
+        g.setType(type);
+        g.setClassLoader(ci.c2.getClassLoader());
+        g.setNamingPolicy(ci.namingPolicy);
+        g.setStrategy(ci.strategy);
+        g.setAttemptLoad(ci.attemptLoad);
+        return g.create();
+    }
+
+    /**
+     * Invoke the original method, on a different object of the same type.
+     * @param obj 被代理类的实例，不能使用MethodInterceptor中的第一个参数，会造成村换调用
+     * @param args 参数
+     */
+    public Object invoke(Object obj, Object[] args) throws Throwable {
+        try {
+            init();
+            FastClassInfo fci = fastClassInfo;
+            //调用的是fastClass的Invoke方法，跟调原生方法是一样的
+            return fci.f1.invoke(fci.i1, obj, args);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        } catch (IllegalArgumentException e) {
+            if (fastClassInfo.i1 < 0)
+                throw new IllegalArgumentException("Protected method: " + sig1);
+            throw e;
+        }
+    }
+
+    /**
+     * 调用父类的方法
+     * @param obj 代理类，必须是 MethodInterceptor 函数中的第一个参数。
+     * @param args 方法参数
+     */
+    public Object invokeSuper(Object obj, Object[] args) throws Throwable {
+        try {
+            init();
+            FastClassInfo fci = fastClassInfo;
+            return fci.f2.invoke(fci.i2, obj, args);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
+        }
+    }
+}
+```
+#### FastClass类
+里面有Generator，专门用来动态生成 FastClass 子类。
+```java
+abstract public class FastClass
+{
+    private Class type;
+
+    protected FastClass() {
+        throw new Error("Using the FastClass empty constructor--please report to the cglib-devel mailing list");
+    }
+
+    protected FastClass(Class type) {
+        this.type = type;
+    }
+
+    public static FastClass create(Class type) {
+    
+        return create(type.getClassLoader(),type);
+        
+    }
+    public static FastClass create(ClassLoader loader, Class type) {
+        Generator gen = new Generator();
+        gen.setType(type);
+        gen.setClassLoader(loader);
+        return gen.create();
+    }
+
+    //生成器
+    public static class Generator extends AbstractClassGenerator
+    {
+        private static final Source SOURCE = new Source(FastClass.class.getName());
+        private Class type;
+        
+        public Generator() {
+            super(SOURCE);
+        }
+
+        public void setType(Class type) {
+            this.type = type;
+        }
+        
+        public FastClass create() {
+            setNamePrefix(type.getName());
+            return (FastClass)super.create(type.getName());
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return type.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(type);
+        }
+
+        public void generateClass(ClassVisitor v) throws Exception {
+            new FastClassEmitter(v, getClassName(), type);
+        }
+
+        protected Object firstInstance(Class type) {
+            return ReflectUtils.newInstance(type,
+                                            new Class[]{ Class.class },
+                                            new Object[]{ this.type });
+        }
+
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
+    }
+    
+}
+```
+#### 动态生成的FastClass类的子类
+继承了抽象类FastClass，针对不同的类生成不同的FastClass子类。
+```java
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by FernFlower decompiler)
+//
+
+package 代理模式.Cglib代理;
+
+import java.lang.reflect.InvocationTargetException;
+import net.sf.cglib.core.Signature;
+import net.sf.cglib.reflect.FastClass;
+import 代理模式.Cglib代理.CglibProxyTest.CglibService;
+
+public class CglibProxyTest$CglibService$$FastClassByCGLIB$$7f8d7b12 extends FastClass {
+    public CglibProxyTest$CglibService$$FastClassByCGLIB$$7f8d7b12(Class var1) {
+        super(var1);
+    }
+
+    public int getIndex(Signature var1) {
+        String var10000 = var1.toString();
+        switch(var10000.hashCode()) {
+        case -1949253108:
+            if (var10000.equals("update()V")) {
+                return 0;
+            }
+            break;
+        case 288953238:
+            if (var10000.equals("find()Ljava/lang/Object;")) {
+                return 1;
+            }
+            break;
+        case 1385557709:
+            if (var10000.equals("setA(I)V")) {
+                return 2;
+            }
+            break;
+        case 1826985398:
+            if (var10000.equals("equals(Ljava/lang/Object;)Z")) {
+                return 3;
+            }
+            break;
+        case 1913648695:
+            if (var10000.equals("toString()Ljava/lang/String;")) {
+                return 4;
+            }
+            break;
+        case 1984935277:
+            if (var10000.equals("hashCode()I")) {
+                return 5;
+            }
+        }
+
+        return -1;
+    }
+   
+    //核心方法，调用方通过控制索引Var1，来确定调原先类实例的哪个方法。
+    public Object invoke(int var1, Object var2, Object[] var3) throws InvocationTargetException {
+        CglibService var10000 = (CglibService)var2;
+        int var10001 = var1;
+        try {
+            switch(var10001) {
+            case 0:
+                var10000.update();
+                return null;
+            case 1:
+                return var10000.find();
+            case 2:
+                var10000.setA(((Number)var3[0]).intValue());
+                return null;
+            case 3:
+                return new Boolean(var10000.equals(var3[0]));
+            case 4:
+                return var10000.toString();
+            case 5:
+                return new Integer(var10000.hashCode());
+            }
+        } catch (Throwable var4) {
+            throw new InvocationTargetException(var4);
+        }
+
+        throw new IllegalArgumentException("Cannot find matching method/constructor");
+    }
+}
+
+```
+
+#### 方法签名Signature
+
+包括方法名，参数列表和返回值。
+```java
+package net.sf.cglib.core;
+
+import org.objectweb.asm.Type;
+
+public class Signature {
+    private String name;
+    //ASM方法描述
+    private String desc;
+
+    public Signature(String name, String desc) {
+        // TODO: better error checking
+        if (name.indexOf('(') >= 0) {
+            throw new IllegalArgumentException("Name '" + name + "' is invalid");
+        }
+        this.name = name;
+        this.desc = desc;
+    }
+    public Signature(String name, Type returnType, Type[] argumentTypes) {
+        this(name, Type.getMethodDescriptor(returnType, argumentTypes));
+    }
+    //方法签名，对一个类来说具有唯一性
+    public String toString() {
+        return name + desc;
+    }
+}
+```
+
 ### 两种动态代理的简单对比
 
 
-|                  | JDK                                                                                 | cglib                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 入口类           | java.lang.reflect.Proxy                                                             | net.sf.cglib.proxy.Enhancer                                                                |
-| 增强类           | java.lang.reflect.InvocationHandler                                                 | net.sf.cglib.proxy.MethodInterceptor                                                       |
-| 是否需要实现接口 | 是                                                                                  | 否                                                                                         |
-| 原理             | 利用反射机制生成一个实现代理接口的匿名类，在调用具体方法前调用InvokeHandler来处理。 | 动态代理是利用asm开源包，对代理对象类的class文件加载进来，通过修改其字节码生成子类来处理。 |
+|          | JDK                                              | cglib                                             |
+|----------|--------------------------------------------------|---------------------------------------------------|
+| 入口类      | java.lang.reflect.Proxy                          | net.sf.cglib.proxy.Enhancer                       |
+| 增强类      | java.lang.reflect.InvocationHandler              | net.sf.cglib.proxy.MethodInterceptor              |
+| 是否需要实现接口 | 是                                                | 否                                                 |
+| 原理       | 利用反射机制生成一个实现代理接口的匿名类，在调用具体方法前调用InvokeHandler来处理。 | 动态代理是利用asm开源包，对代理对象类的class文件加载进来，通过修改其字节码生成子类来处理。 |
+

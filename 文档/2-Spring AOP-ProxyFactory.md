@@ -1,4 +1,4 @@
-# Spring Aop
+# Spring Aop 1
 
 [Spring 官方网站关于AOP的文档](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#aop) 对spring 使用方法有比较详尽的介绍。
 
@@ -79,7 +79,9 @@ public class 配置类配置示例Application {
 | 1    | aopProxyFactory | AopProxyFactory | 默认是DefaultAopProxyFactory，获取真正的JDK或者CGLIB工厂 |
 | 2    | advisors        | List<Advisor>   | 本质就是advice的实现类。                                 |
 
-我们也可以通过 ProxyFactory 来手动创建代理。首先看一个
+我们也可以通过 ProxyFactory 来手动创建代理。
+
+### ProxyFactory创建CGLIB代理
 
 ```java
 public class 配置类配置示例Application {
@@ -135,7 +137,7 @@ public class 配置类配置示例Application {
 
 从以上可知， ProxyFactory需要传入一个被代理类，以及多个advice。
 
-生成的Cglib代理类：
+### 生成的Cglib代理类
 
 ```java
 import com.mjy.spring.aop.ProxyFactoryTest.CglibApplication.Duck;
@@ -694,7 +696,7 @@ public class CglibApplication$Duck$$EnhancerBySpringCGLIB$$9da35552 extends Duck
 }
 ```
 
-想要生成JDK代理，可以如以下例子。
+### ProxyFactory 生成JDK代理
 
 ```java
 public class JDKApplication {
@@ -752,7 +754,7 @@ public class JDKApplication {
 }
 ```
 
-生成的代码如下：
+### JDK代理类
 
 ```java
 import JDKApplication.Run;
@@ -1136,21 +1138,19 @@ final class $Proxy0 extends Proxy implements Run, SpringProxy, Advised, Decorati
 ### ProxyFactory核心类
 
 
-| 编号                          | 类                             | 说明                                                            |
-| ------------------------------- | -------------------------------- | ----------------------------------------------------------------- |
-| ProxyFactory                  | 代理入口                       | 组织参数                                                        |
-| DefaultAopProxyFactory        | ProxyFactory的父类             | 真正实现获取代理的类                                            |
-| Advice                        | 通知                           | 实现业务代码的类                                                |
-| Advisor                       | Advice容器                     | 定义如何去获取Advice                                            |
-| CglibAopProxy                 | 基于Cglib的Aop代理             |                                                                 |
-| JdkDynamicAopProxy            | 基于JDK的AOP                   |                                                                 |
-| DefaultAdvisorChainFactory    | 获取通知链                     | JdkDynamicAopProxy 根据配置匹配对应的Interceptors               |
-| DefaultAdvisorAdapterRegistry | 通知适配器                     | JdkDynamicAopProxy 将所有的adviceor适配成为 MethodInterceptor   |
-| ReflectiveMethodInvocation    | 真正执行增强代码的地方         | JdkDynamicAopProxy下递归的方式完成所有的MethodInterceptor的调用 |
-| DynamicAdvisedInterceptor     | 包装类                         | 将AdvisedSupport包装成为 MethodInterceptor                      |
-| CglibMethodInvocation         | ReflectiveMethodInvocation子类 | 递归的方式完成所有的MethodInterceptor的调用                     |
-
-### Advice
+| 编号                          | 类                             | 说明                                        |
+| ------------------------------- | -------------------------------- | --------------------------------------------- |
+| ProxyFactory                  | 代理入口                       | 组织参数                                    |
+| DefaultAopProxyFactory        | ProxyFactory的父类             | 真正实现获取代理的类                        |
+| Advice                        | 通知                           | 实现业务代码的类                            |
+| Advisor                       | Advice容器                     | 定义如何去获取Advice                        |
+| CglibAopProxy                 | 基于Cglib的Aop代理             |                                             |
+| JdkDynamicAopProxy            | 基于JDK的AOP                   |                                             |
+| DefaultAdvisorChainFactory    | 获取通知链                     | 根据配置匹配对应的Interceptors              |
+| DefaultAdvisorAdapterRegistry | 通知适配器                     | 将所有的adviceor适配成为 MethodInterceptor  |
+| ReflectiveMethodInvocation    | 真正执行增强代码的地方         | 递归的方式完成所有的MethodInterceptor的调用 |
+| DynamicAdvisedInterceptor     | 包装类是                       | 将AdvisedSupport包装成为 MethodInterceptor  |
+| CglibMethodInvocation         | ReflectiveMethodInvocation子类 | 最后使用MethodProxy来完成被代理类调用       |
 
 从前面可以知道，ProxyFactory具体的增强是由Advice去实现的，我们来看下Advice有什么功能。
 
@@ -1223,6 +1223,8 @@ Advisor 定义了有一个重要的方法: Advice getAdvice(),看注解可知，
 
 CglibAopProxy 是基于Cglib方式创建代理的，每创建一个代理类前，需要先创建一个CglibAopProxy实例，传入一些配置，主要是AdvisedSupport实例。CglibAopProxy类是默认修饰符的，只能在当前包使用。需要说明的是，Spring-core已经集成了asm和cglib的代码，因此使用spring时不再需要引入cglib的包。
 
+CglibAopProxy在创建代理时，传入了Callback数组，其中最重要的是DynamicAdvisedInterceptor。其中具体实现是CglibMethodInvocation，继承了ReflectiveMethodInvocation，重写了invokeJoinpoint，因为ReflectiveMethodInvocation是基于JDK的实现，需要换成CGLIB，调用MethodProxy来调用原来的方法。
+
 ```java
 class CglibAopProxy implements AopProxy, Serializable {
 
@@ -1249,7 +1251,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 	@Override
 	public Object getProxy(@Nullable ClassLoader classLoader) {
 		try {
-		//被代理类
+		    //被代理类
 			Class<?> rootClass = this.advised.getTargetClass();
 			Assert.state(rootClass != null, "Target class must be available for creating a CGLIB proxy");
 
@@ -1278,13 +1280,14 @@ class CglibAopProxy implements AopProxy, Serializable {
 			enhancer.setInterfaces(AopProxyUtils.completeProxiedInterfaces(this.advised));
 			enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
 			enhancer.setStrategy(new ClassLoaderAwareGeneratorStrategy(classLoader));
-
+                        //核心方法，获取烂机器
 			Callback[] callbacks = getCallbacks(rootClass);
 			Class<?>[] types = new Class<?>[callbacks.length];
 			for (int x = 0; x < types.length; x++) {
 				types[x] = callbacks[x].getClass();
 			}
 			// fixedInterceptorMap only populated at this point, after getCallbacks call above
+
 			enhancer.setCallbackFilter(new ProxyCallbackFilter(
 					this.advised.getConfigurationOnlyCopy(), this.fixedInterceptorMap, this.fixedInterceptorOffset));
 			enhancer.setCallbackTypes(types);
@@ -2157,9 +2160,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 
 	@Override
 	public Object getProxy(@Nullable ClassLoader classLoader) {
-		if (logger.isTraceEnabled()) {
-			logger.trace("Creating JDK dynamic proxy: " + this.advised.getTargetSource());
-		}
+		//注意这里创建代理的参数中，传入的InvocationHandler为this。
 		return Proxy.newProxyInstance(classLoader, this.proxiedInterfaces, this);
 	}
 
@@ -2187,9 +2188,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 
 
 	/**
-	 * Implementation of {@code InvocationHandler.invoke}.
-	 * <p>Callers will see exactly the exception thrown by the target,
-	 * unless a hook method throws an exception.
+         * 方法争强，被代理类的方法，都会经过这里进行判断。
 	 */
 	@Override
 	@Nullable
@@ -2201,23 +2200,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		Object target = null;
 
 		try {
-			if (!this.equalsDefined && AopUtils.isEqualsMethod(method)) {
-				// The target does not implement the equals(Object) method itself.
-				return equals(args[0]);
-			}
-			else if (!this.hashCodeDefined && AopUtils.isHashCodeMethod(method)) {
-				// The target does not implement the hashCode() method itself.
-				return hashCode();
-			}
-			else if (method.getDeclaringClass() == DecoratingProxy.class) {
-				// There is only getDecoratedClass() declared -> dispatch to proxy config.
-				return AopProxyUtils.ultimateTargetClass(this.advised);
-			}
-			else if (!this.advised.opaque && method.getDeclaringClass().isInterface() &&
-					method.getDeclaringClass().isAssignableFrom(Advised.class)) {
-				// Service invocations on ProxyConfig with the proxy config...
-				return AopUtils.invokeJoinpointUsingReflection(this.advised, method, args);
-			}
+			//忽略一些固定方法
 
 			Object retVal;
 
@@ -2232,23 +2215,20 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			target = targetSource.getTarget();
 			Class<?> targetClass = (target != null ? target.getClass() : null);
 
-			// Get the interception chain for this method. 根据方法和类，查找合适的拦截器，具体查看DefaultAdvisorChainFactory类。实际会返回MethodInterceptor数组
+			// 根据方法和类，查找寻找满足条件的拦截器，具体查看DefaultAdvisorChainFactory类。实际会返回MethodInterceptor数组
 			List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 
 			// Check whether we have any advice. If we don't, we can fallback on direct
 			// reflective invocation of the target, and avoid creating a MethodInvocation.
 			if (chain.isEmpty()) {
-				// We can skip creating a MethodInvocation: just invoke the target directly
-				// Note that the final invoker must be an InvokerInterceptor so we know it does
-				// nothing but a reflective operation on the target, and no hot swapping or fancy proxying.
+				//反射直接调用原始方法
 				Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
 				retVal = AopUtils.invokeJoinpointUsingReflection(target, method, argsToUse);
 			}
 			else {
-				// We need to create a method invocation...
-				MethodInvocation invocation =
-						new ReflectiveMethodInvocation(proxy, target, method, args, targetClass, chain);
-				// Proceed to the joinpoint through the interceptor chain.
+				// 封装一下。可以看到，JDK代理中，真正执行调用链的是ReflectiveMethodInvocation类。
+				MethodInvocation invocation = new ReflectiveMethodInvocation(proxy, target, method, args, targetClass, chain);
+				// 执行调用链条
 				retVal = invocation.proceed();
 			}
 
@@ -2257,9 +2237,6 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			if (retVal != null && retVal == target &&
 					returnType != Object.class && returnType.isInstance(proxy) &&
 					!RawTargetAccess.class.isAssignableFrom(method.getDeclaringClass())) {
-				// Special case: it returned "this" and the return type of the method
-				// is type-compatible. Note that we can't help if the target sets
-				// a reference to itself in another returned object.
 				retVal = proxy;
 			}
 			else if (retVal == null && returnType != Void.TYPE && returnType.isPrimitive()) {
@@ -2281,47 +2258,105 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 	}
 
 
+
+}
+```
+
+### ReflectiveMethodInvocation
+
+在JDK动态代理中，最终是交给ReflectiveMethodInvocation执行调用链
+
+```java
+public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Cloneable {
+
+	protected final Object proxy;
+
+	@Nullable
+	protected final Object target;
+
+	protected final Method method;
+
+	protected Object[] arguments;
+
+	@Nullable
+	private final Class<?> targetClass;
+
 	/**
-	 * Equality means interfaces, advisors and TargetSource are equal.
-	 * <p>The compared object may be a JdkDynamicAopProxy instance itself
-	 * or a dynamic proxy wrapping a JdkDynamicAopProxy instance.
+	 * Lazily initialized map of user-specific attributes for this invocation.
 	 */
+	@Nullable
+	private Map<String, Object> userAttributes;
+
+	/**
+	 * List of MethodInterceptor and InterceptorAndDynamicMethodMatcher
+	 * that need dynamic checks.
+	 */
+	protected final List<?> interceptorsAndDynamicMethodMatchers;
+
+	/**
+	 * Index from 0 of the current interceptor we're invoking.
+	 * -1 until we invoke: then the current interceptor.
+	 */
+	private int currentInterceptorIndex = -1;
+
+
+
+	protected ReflectiveMethodInvocation(
+			Object proxy, @Nullable Object target, Method method, @Nullable Object[] arguments,
+			@Nullable Class<?> targetClass, List<Object> interceptorsAndDynamicMethodMatchers) {
+
+		this.proxy = proxy;
+		this.target = target;
+		this.targetClass = targetClass;
+		this.method = BridgeMethodResolver.findBridgedMethod(method);
+		this.arguments = AopProxyUtils.adaptArgumentsIfNecessary(method, arguments);
+		this.interceptorsAndDynamicMethodMatchers = interceptorsAndDynamicMethodMatchers;
+	}
+
+
+
+
+
 	@Override
-	public boolean equals(@Nullable Object other) {
-		if (other == this) {
-			return true;
-		}
-		if (other == null) {
-			return false;
+	@Nullable
+	public Object proceed() throws Throwable {
+		// We start with an index of -1 and increment early.
+		if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
+                         //循环结束，调用目标方法
+			return invokeJoinpoint();
 		}
 
-		JdkDynamicAopProxy otherProxy;
-		if (other instanceof JdkDynamicAopProxy) {
-			otherProxy = (JdkDynamicAopProxy) other;
-		}
-		else if (Proxy.isProxyClass(other.getClass())) {
-			InvocationHandler ih = Proxy.getInvocationHandler(other);
-			if (!(ih instanceof JdkDynamicAopProxy)) {
-				return false;
+		Object interceptorOrInterceptionAdvice =
+				this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+		if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
+			// Evaluate dynamic method matcher here: static part will already have
+			// been evaluated and found to match.
+			InterceptorAndDynamicMethodMatcher dm =
+					(InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
+			Class<?> targetClass = (this.targetClass != null ? this.targetClass : this.method.getDeclaringClass());
+			if (dm.methodMatcher.matches(this.method, targetClass, this.arguments)) {
+				return dm.interceptor.invoke(this);
 			}
-			otherProxy = (JdkDynamicAopProxy) ih;
+			else {
+				// Dynamic matching failed.
+				// Skip this interceptor and invoke the next in the chain.
+				return proceed();
+			}
 		}
 		else {
-			// Not a valid comparison...
-			return false;
+			//不断循环。有点类似递归。从第一个advice调用到最后一个，再不断返回。
+			return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
 		}
-
-		// If we get here, otherProxy is the other AopProxy.
-		return AopProxyUtils.equalsInProxy(this.advised, otherProxy.advised);
 	}
 
-	/**
-	 * Proxy uses the hash code of the TargetSource.
-	 */
-	@Override
-	public int hashCode() {
-		return JdkDynamicAopProxy.class.hashCode() * 13 + this.advised.getTargetSource().hashCode();
+
+        //这个是默认JDK代理的方式，CGLIB需要重写
+	@Nullable
+	protected Object invokeJoinpoint() throws Throwable {
+		return AopUtils.invokeJoinpointUsingReflection(this.target, this.method, this.arguments);
 	}
+
+
 
 }
 ```
@@ -2400,386 +2435,3 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 }
 ```
 
-##Spring Aop初始化流程
-接下来看下Spring 如何让启动Aop。
-从以上代码可以看到，Spring Aop是独立的模块，需要@EnableAspectJAutoProxy注解才能够发挥作用
-
-```java
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Import(AspectJAutoProxyRegistrar.class)
-public @interface EnableAspectJAutoProxy {
-	boolean proxyTargetClass() default false;
-	boolean exposeProxy() default false;
-}
-```
-
-核心为@Import(AspectJAutoProxyRegistrar.class)。查看源码，属于Spring-context内的类。默认情况下使用
-
-> AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry);
-
-来启动配置，具体类为AopConfigUtils。
-
-```java
-public abstract class AopConfigUtils {
-
-	/**
-	 * The bean name of the internally managed auto-proxy creator.
-	 */
-	public static final String AUTO_PROXY_CREATOR_BEAN_NAME =
-			"org.springframework.aop.config.internalAutoProxyCreator";
-
-	/**
-	 * Stores the auto proxy creator classes in escalation order.
-	 */
-   private static final List<Class<?>> APC_PRIORITY_LIST = new ArrayList<>(3);
-
-	static {
-		// Set up the escalation list...
-		APC_PRIORITY_LIST.add(InfrastructureAdvisorAutoProxyCreator.class);
-		APC_PRIORITY_LIST.add(AspectJAwareAdvisorAutoProxyCreator.class);
-		APC_PRIORITY_LIST.add(AnnotationAwareAspectJAutoProxyCreator.class);
-	}
-
-  
-    @Nullable
-    public static BeanDefinition registerAspectJAnnotationAutoProxyCreatorIfNecessary(BeanDefinitionRegistry registry) {
-        return registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry, null);
-    }
-    //将 AnnotationAwareAspectJAutoProxyCreator 注册到BeanDefinitionRegistry。
-    @Nullable
-    public static BeanDefinition registerAspectJAnnotationAutoProxyCreatorIfNecessary(
-            BeanDefinitionRegistry registry, @Nullable Object source) {
-
-        return registerOrEscalateApcAsRequired(AnnotationAwareAspectJAutoProxyCreator.class, registry, source);
-    }
-    @Nullable
-    private static BeanDefinition registerOrEscalateApcAsRequired(
-            Class<?> cls, BeanDefinitionRegistry registry, @Nullable Object source) {
-
-        Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
-
-        if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {
-            BeanDefinition apcDefinition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);
-            if (!cls.getName().equals(apcDefinition.getBeanClassName())) {
-                int currentPriority = findPriorityForClass(apcDefinition.getBeanClassName());
-                int requiredPriority = findPriorityForClass(cls);
-                if (currentPriority < requiredPriority) {
-                    apcDefinition.setBeanClassName(cls.getName());
-                }
-            }
-            return null;
-        }
-
-        RootBeanDefinition beanDefinition = new RootBeanDefinition(cls);
-        beanDefinition.setSource(source);
-        beanDefinition.getPropertyValues().add("order", Ordered.HIGHEST_PRECEDENCE);
-        beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
-        registry.registerBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME, beanDefinition);
-        return beanDefinition;
-    }
-
-	//忽略
-
-}
-```
-
-从上可以看到，在Spring启动获取bean定义的时候，将 AnnotationAwareAspectJAutoProxyCreator 注入到了BeanDefinitionRegistry。
-AnnotationAwareAspectJAutoProxyCreator 名字含义为: 基于注解的AspectJ自动代理构造器，查看继承关系，还是比较复杂的。
-![annotation-auto-proxy-crteator](./assets/从JAVA反射技术到Spring AOP-1646047952990.png)
-从继承关系图可以看到AnnotationAwareAspectJAutoProxyCreator实现了 BeanPostProcessor。依据经验核心代码应该是在BeanPostProcessor的两个实现类。
-通过idea的类的结构图可以看到，在抽象类 AbstractAutoProxyCreator 中有实现了两个抽象方法
-![creator](./assets/从JAVA反射技术到Spring AOP-1646048472047.png)
-
-```java
-public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
-        implements SmartInstantiationAwareBeanPostProcessor, BeanFactoryAware {
-
-    @Override
-    public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
-        Object cacheKey = getCacheKey(beanClass, beanName);
-        //先检查缓存
-        if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
-            if (this.advisedBeans.containsKey(cacheKey)) {
-                return null;
-            }
-            if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
-                this.advisedBeans.put(cacheKey, Boolean.FALSE);
-                return null;
-            }
-        }
-
-        // Create proxy here if we have a custom TargetSource.
-        // Suppresses unnecessary default instantiation of the target bean:
-        // The TargetSource will handle target instances in a custom fashion.
-        TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
-        if (targetSource != null) {
-            if (StringUtils.hasLength(beanName)) {
-                this.targetSourcedBeans.add(beanName);
-            }
-            Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
-            Object proxy = createProxy(beanClass, beanName, specificInterceptors, targetSource);
-            this.proxyTypes.put(cacheKey, proxy.getClass());
-            return proxy;
-        }
-
-        return null;
-    }
-
-    @Override
-    public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
-        if (bean != null) {
-            Object cacheKey = getCacheKey(bean.getClass(), beanName);
-            if (this.earlyProxyReferences.remove(cacheKey) != bean) {
-                return wrapIfNecessary(bean, beanName, cacheKey);
-            }
-        }
-        return bean;
-    }
-    //实现代理
-    protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
-        if (StringUtils.hasLength(beanName) && this.targetSourcedBeans.contains(beanName)) {
-            return bean;
-        }
-        if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
-            return bean;
-        }
-        if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
-            this.advisedBeans.put(cacheKey, Boolean.FALSE);
-            return bean;
-        }
-
-        // Create proxy if we have advice.
-        //如果有advice,就是创建一个代理。
-        //看到specificInterceptors，就比较熟悉了， cglib也是需要实现一个interceptors
-        Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
-        if (specificInterceptors != DO_NOT_PROXY) {
-            this.advisedBeans.put(cacheKey, Boolean.TRUE);
-            Object proxy = createProxy(
-                    bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
-            this.proxyTypes.put(cacheKey, proxy.getClass());
-            return proxy;
-        }
-
-        this.advisedBeans.put(cacheKey, Boolean.FALSE);
-        return bean;
-    }
-
-    protected Object createProxy(Class<?> beanClass, @Nullable String beanName,
-                                 @Nullable Object[] specificInterceptors, TargetSource targetSource) {
-
-        if (this.beanFactory instanceof ConfigurableListableBeanFactory) {
-            AutoProxyUtils.exposeTargetClass((ConfigurableListableBeanFactory) this.beanFactory, beanName, beanClass);
-        }
-        //创建一个代理工厂
-        ProxyFactory proxyFactory = new ProxyFactory();
-        proxyFactory.copyFrom(this);
-
-        if (proxyFactory.isProxyTargetClass()) {
-            // Explicit handling of JDK proxy targets (for introduction advice scenarios)
-            if (Proxy.isProxyClass(beanClass)) {
-                // Must allow for introductions; can't just set interfaces to the proxy's interfaces only.
-                for (Class<? ifc : beanClass.getInterfaces()) {
-                    proxyFactory.addInterface(ifc);
-                }
-            }
-        }
-        else {
-            // No proxyTargetClass flag enforced, let's apply our default checks...
-            if (shouldProxyTargetClass(beanClass, beanName)) {
-                proxyFactory.setProxyTargetClass(true);
-            }
-            else {
-                evaluateProxyInterfaces(beanClass, proxyFactory);
-            }
-        }
-        //查找相对应的通知 Advisor
-        Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
-        proxyFactory.addAdvisors(advisors);
-        proxyFactory.setTargetSource(targetSource);
-        customizeProxyFactory(proxyFactory);
-
-        proxyFactory.setFrozen(this.freezeProxy);
-        if (advisorsPreFiltered()) {
-            proxyFactory.setPreFiltered(true);
-        }
-
-        // Use original ClassLoader if bean class not locally loaded in overriding class loader
-        ClassLoader classLoader = getProxyClassLoader();
-        if (classLoader instanceof SmartClassLoader && classLoader != beanClass.getClassLoader()) {
-            classLoader = ((SmartClassLoader) classLoader).getOriginalClassLoader();
-        }
-        return proxyFactory.getProxy(classLoader);
-    }
-}
-```
-
-org.springframework.aop.aspectj.annotation.BeanFactoryAspectJAdvisorsBuilder.buildAspectJAdvisors获取容器中所有的
-核心的两句
-MetadataAwareAspectInstanceFactory factory =
-new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
-List<Advisor classAdvisors = this.advisorFactory.getAdvisors(factory);
-
-```java
-public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFactory implements Serializable {
-    @Override
-    public List<Advisor> getAdvisors(MetadataAwareAspectInstanceFactory aspectInstanceFactory) {
-        Class<?> aspectClass = aspectInstanceFactory.getAspectMetadata().getAspectClass();
-        String aspectName = aspectInstanceFactory.getAspectMetadata().getAspectName();
-        validate(aspectClass);
-
-        // We need to wrap the MetadataAwareAspectInstanceFactory with a decorator
-        // so that it will only instantiate once.
-        MetadataAwareAspectInstanceFactory lazySingletonAspectInstanceFactory =
-                new LazySingletonAspectInstanceFactoryDecorator(aspectInstanceFactory);
-
-        List<Advisor> advisors = new ArrayList<>();
-        for (Method method : getAdvisorMethods(aspectClass)) {
-            // Prior to Spring Framework 5.2.7, advisors.size() was supplied as the declarationOrderInAspect
-            // to getAdvisor(...) to represent the "current position" in the declared methods list.
-            // However, since Java 7 the "current position" is not valid since the JDK no longer
-            // returns declared methods in the order in which they are declared in the source code.
-            // Thus, we now hard code the declarationOrderInAspect to 0 for all advice methods
-            // discovered via reflection in order to support reliable advice ordering across JVM launches.
-            // Specifically, a value of 0 aligns with the default value used in
-            // AspectJPrecedenceComparator.getAspectDeclarationOrder(Advisor).
-            Advisor advisor = getAdvisor(method, lazySingletonAspectInstanceFactory, 0, aspectName);
-            if (advisor != null) {
-                advisors.add(advisor);
-            }
-        }
-
-        // If it's a per target aspect, emit the dummy instantiating aspect.
-        if (!advisors.isEmpty() && lazySingletonAspectInstanceFactory.getAspectMetadata().isLazilyInstantiated()) {
-            Advisor instantiationAdvisor = new SyntheticInstantiationAdvisor(lazySingletonAspectInstanceFactory);
-            advisors.add(0, instantiationAdvisor);
-        }
-
-        // Find introduction fields.
-        for (Field field : aspectClass.getDeclaredFields()) {
-            Advisor advisor = getDeclareParentsAdvisor(field);
-            if (advisor != null) {
-                advisors.add(advisor);
-            }
-        }
-
-        return advisors;
-    }
-
-    @Override
-    @Nullable
-    public Advisor getAdvisor(Method candidateAdviceMethod, MetadataAwareAspectInstanceFactory aspectInstanceFactory,
-                              int declarationOrderInAspect, String aspectName) {
-
-        validate(aspectInstanceFactory.getAspectMetadata().getAspectClass());
-
-        AspectJExpressionPointcut expressionPointcut = getPointcut(
-                candidateAdviceMethod, aspectInstanceFactory.getAspectMetadata().getAspectClass());
-        if (expressionPointcut == null) {
-            return null;
-        }
-
-        return new InstantiationModelAwarePointcutAdvisorImpl(expressionPointcut, candidateAdviceMethod,
-                this, aspectInstanceFactory, declarationOrderInAspect, aspectName);
-    }
-}
-```
-
-可以看到为InstantiationModelAwarePointcutAdvisorImpl。
-
-具体为 org.springframework.aop.aspectj.annotation.ReflectiveAspectJAdvisorFactory.getAdvisors
-
-可以看到，最终是交给ProxyFactory去实现的。
-
-## @EnableAspectJAutoProxy
-
-## DefaultAopProxyFactory
-
-ProxyFactory调用了父类的ProxyCreatorSupport的AopProxyFactory实例来创建代理。AopProxyFactory 实现类为DefaultAopProxyFactory。查看源码，AopProxyFactory继承了AopProxyFactory，本身只有一个方法createAopProxy。
-![DefaultAopProxyFactory](./assets/从JAVA反射技术到Spring AOP-1646099287418.png)
-
-```java
-public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
-
-	private static final long serialVersionUID = 7930414337282325166L;
-
-
-	@Override
-	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
-		if (!NativeDetector.inNativeImage() &&
-				(config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config))) {
-			Class<?> targetClass = config.getTargetClass();
-			if (targetClass == null) {
-				throw new AopConfigException("TargetSource cannot determine target class: " +
-						"Either an interface or a target is required for proxy creation.");
-			}
-			if (targetClass.isInterface() || Proxy.isProxyClass(targetClass)) {
-				return new JdkDynamicAopProxy(config);
-			}
-			return new ObjenesisCglibAopProxy(config);
-		}
-		else {
-			return new JdkDynamicAopProxy(config);
-		}
-	}
-
-	/**
-	 * Determine whether the supplied {@link AdvisedSupport} has only the
-	 * {@link org.springframework.aop.SpringProxy} interface specified
-	 * (or no proxy interfaces specified at all).
-	 */
-	private boolean hasNoUserSuppliedProxyInterfaces(AdvisedSupport config) {
-		Class<?>[] ifcs = config.getProxiedInterfaces();
-		return (ifcs.length == 0 || (ifcs.length == 1 && SpringProxy.class.isAssignableFrom(ifcs[0])));
-	}
-
-}
-```
-
-只有一个方法，那就是
-
-AopProxy createAopProxy(AdvisedSupport config)
-返回了 AopProxy
-
-```java
-public interface AopProxy {
-
-	/**
-	 * Create a new proxy object.
-	 * <pUses the AopProxy's default class loader (if necessary for proxy creation):
-	 * usually, the thread context class loader.
-	 * @return the new proxy object (never {@code null})
-	 * @see Thread#getContextClassLoader()
-	 */
-	Object getProxy();
-
-	/**
-	 * Create a new proxy object.
-	 * <pUses the given class loader (if necessary for proxy creation).
-	 * {@code null} will simply be passed down and thus lead to the low-level
-	 * proxy facility's default, which is usually different from the default chosen
-	 * by the AopProxy implementation's {@link #getProxy()} method.
-	 * @param classLoader the class loader to create the proxy with
-	 * (or {@code null} for the low-level proxy facility's default)
-	 * @return the new proxy object (never {@code null})
-	 */
-	Object getProxy(@Nullable ClassLoader classLoader);
-
-}
-```
-
-查看实现类，可以看到两种具体的实现：ObjenesisCglibAopProxy和JdkDynamicAopProxy
-![AopProxy](./assets/从JAVA反射技术到Spring AOP-1646059366997.png)
-
-所以Spring-aop最终时由ObjenesisCglibAopProxy和JdkDynamicAopProxy创建代理的，研究清楚了这两个类就能对Spring-Aop的实现有一个深入的了解。
-
-# 参考
-
-1. [java反射机制深入理解剖析](https://www.w3cschool.cn/java/java-reflex.html)
-2. [动态代理与静态代理区别](https://blog.csdn.net/ikownyou/article/details/53081426?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0.pc_relevant_paycolumn_v3&spm=1001.2101.3001.4242.1&utm_relevant_index=3)
-3. [Spring AOP——Spring 中面向切面编程 ](https://www.cnblogs.com/joy99/p/10941543.html)
-4. [Spring 官方网站关于AOP的文档](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#aop)
-5. [SpringAPI手动创建代理对象——ProxyFactory](https://blog.csdn.net/u012834750/article/details/71773598)
-6. [精讲 Spring AOP](https://www.jianshu.com/nb/36701166)
-7. [spring——Java Proxy和Cglib两种方式方法嵌套调用时候代理行为分析](https://juejin.cn/post/7038246357752086541)
