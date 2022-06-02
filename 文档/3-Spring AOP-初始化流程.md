@@ -28,7 +28,7 @@ class AspectJAutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 	@Override
 	public void registerBeanDefinitions(
 			AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-        
+      
 		AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry);
         //如果存在注解并且有相应的值，就修改BeanDefinitionRegistry。
 		AnnotationAttributes enableAspectJAutoProxy = AnnotationConfigUtils.attributesFor(importingClassMetadata, EnableAspectJAutoProxy.class);
@@ -45,7 +45,6 @@ class AspectJAutoProxyRegistrar implements ImportBeanDefinitionRegistrar {
 }
 
 ```
-
 
 来启动配置，具体类为AopConfigUtils。
 
@@ -96,16 +95,16 @@ public abstract class AopConfigUtils {
 ```
 
 AnnotationAwareAspectJAutoProxyCreator 名字含义为: 基于注解的AspectJ自动代理构造器，查看继承关系，还是比较复杂的。
-![annotation-auto-proxy-crteator](./assets/从JAVA反射技术到Spring AOP-1646047952990.png)
+![annotation-auto-proxy-crteator](./assets/1646047952990.png)
 从继承关系图可以看到AnnotationAwareAspectJAutoProxyCreator实现了 BeanPostProcessor。依据经验核心代码应该是在BeanPostProcessor的两个实现类。
 通过idea的类的结构图可以看到，在抽象类 AbstractAutoProxyCreator 中有实现了两个抽象方法
-![creator](./assets/从JAVA反射技术到Spring AOP-1646048472047.png)
+![creator](./assets/1646048472047.png)
 
-首先看AnnotationAwareAspectJAutoProxyCreator的父类
+首先看 AnnotationAwareAspectJAutoProxyCreator 的父类
 
 ```java
 public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport implements SmartInstantiationAwareBeanPostProcessor, BeanFactoryAware {
-    
+  
     //此时bean已经实例化，但是没有调用Spring property population，即没有进行依赖注入
     @Override
     public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
@@ -195,7 +194,7 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
     //用来查找advisor
     @Nullable
     private BeanFactoryAdvisorRetrievalHelper advisorRetrievalHelper;
-    
+  
     @Override
     public void setBeanFactory(BeanFactory beanFactory) {
         super.setBeanFactory(beanFactory);
@@ -226,19 +225,20 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
         List<Advisor> candidateAdvisors = findCandidateAdvisors();
         //根据规则获取可用的Advisor
         List<Advisor> eligibleAdvisors = findAdvisorsThatCanApply(candidateAdvisors, beanClass, beanName);
-        
+      
         extendAdvisors(eligibleAdvisors);
         if (!eligibleAdvisors.isEmpty()) {
+            //排序
             eligibleAdvisors = sortAdvisors(eligibleAdvisors);
         }
         return eligibleAdvisors;
     }
-
+    //获取所有的advisors
     protected List<Advisor> findCandidateAdvisors() {
         Assert.state(this.advisorRetrievalHelper != null, "No BeanFactoryAdvisorRetrievalHelper available");
         return this.advisorRetrievalHelper.findAdvisorBeans();
     }
-
+    //进行判断
     protected List<Advisor> findAdvisorsThatCanApply(
             List<Advisor> candidateAdvisors, Class<?> beanClass, String beanName) {
 
@@ -253,43 +253,32 @@ public abstract class AbstractAdvisorAutoProxyCreator extends AbstractAutoProxyC
 }
 ```
 
-
 查找候选的advisor
+
 ```java
 public class BeanFactoryAdvisorRetrievalHelper {
 
-	private static final Log logger = LogFactory.getLog(BeanFactoryAdvisorRetrievalHelper.class);
 
 	private final ConfigurableListableBeanFactory beanFactory;
 
 	@Nullable
 	private volatile String[] cachedAdvisorBeanNames;
-
-
-	/**
-	 * Create a new BeanFactoryAdvisorRetrievalHelper for the given BeanFactory.
-	 * @param beanFactory the ListableBeanFactory to scan
-	 */
+    //初始化的时候传入了beanFactory
 	public BeanFactoryAdvisorRetrievalHelper(ConfigurableListableBeanFactory beanFactory) {
-		Assert.notNull(beanFactory, "ListableBeanFactory must not be null");
 		this.beanFactory = beanFactory;
 	}
 
 
 	/**
-	 * Find all eligible Advisor beans in the current bean factory,
-	 * ignoring FactoryBeans and excluding beans that are currently in creation.
-	 * @return the list of {@link org.springframework.aop.Advisor} beans
-	 * @see #isEligibleBean
+     * 从当前的beanFactory中获取有资格的Advisor。排除那些正在创建的bean。
 	 */
 	public List<Advisor> findAdvisorBeans() {
-		// Determine list of advisor bean names, if not cached already.
-		String[] advisorNames = this.cachedAdvisorBeanNames;
+ 		String[] advisorNames = this.cachedAdvisorBeanNames;
+         //先获取bean名称。
 		if (advisorNames == null) {
 			// Do not initialize FactoryBeans here: We need to leave all regular beans
 			// uninitialized to let the auto-proxy creator apply to them!
-			advisorNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
-					this.beanFactory, Advisor.class, true, false);
+			advisorNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(this.beanFactory, Advisor.class, true, false);
 			this.cachedAdvisorBeanNames = advisorNames;
 		}
 		if (advisorNames.length == 0) {
@@ -332,6 +321,8 @@ public class BeanFactoryAdvisorRetrievalHelper {
 	}
 }
 ```
+
+从上面可以看出，所有的bean都属于Advisor类。可以认为，所有的增强，都已经被封装成为了advisor。
 
 org.springframework.aop.aspectj.annotation.BeanFactoryAspectJAdvisorsBuilder.buildAspectJAdvisors获取容器中所有的
 核心的两句
@@ -415,7 +406,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 ## DefaultAopProxyFactory
 
 ProxyFactory调用了父类的ProxyCreatorSupport的AopProxyFactory实例来创建代理。AopProxyFactory 实现类为DefaultAopProxyFactory。查看源码，AopProxyFactory继承了AopProxyFactory，本身只有一个方法createAopProxy。
-![DefaultAopProxyFactory](./assets/从JAVA反射技术到Spring AOP-1646099287418.png)
+![DefaultAopProxyFactory](./assets/1646099287418.png)
 
 ```java
 public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
@@ -489,19 +480,6 @@ public interface AopProxy {
 ```
 
 查看实现类，可以看到两种具体的实现：ObjenesisCglibAopProxy和JdkDynamicAopProxy
-![AopProxy](./assets/从JAVA反射技术到Spring AOP-1646059366997.png)
+![AopProxy](./assets/1646059366997.png)
 
 所以Spring-aop最终时由ObjenesisCglibAopProxy和JdkDynamicAopProxy创建代理的，研究清楚了这两个类就能对Spring-Aop的实现有一个深入的了解。
-
-# 参考
-
-1. [java反射机制深入理解剖析](https://www.w3cschool.cn/java/java-reflex.html)
-2. [Java:Annotation(注解)--原理到案例](https://www.jianshu.com/p/28edf5352b63)
-3. [AnnotatedElement](https://www.jianshu.com/p/953e26463fbc)
-4. [动态代理与静态代理区别](https://blog.csdn.net/ikownyou/article/details/53081426?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0.pc_relevant_paycolumn_v3&spm=1001.2101.3001.4242.1&utm_relevant_index=3)
-5. [Spring AOP——Spring 中面向切面编程 ](https://www.cnblogs.com/joy99/p/10941543.html)
-6. [Spring 官方网站关于AOP的文档](https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#aop)
-7. [SpringAPI手动创建代理对象——ProxyFactory](https://blog.csdn.net/u012834750/article/details/71773598)
-8. [精讲 Spring AOP](https://www.jianshu.com/nb/36701166)
-9. [spring——Java Proxy和Cglib两种方式方法嵌套调用时候代理行为分析](https://juejin.cn/post/7038246357752086541)
-10. [java动态代理ProxyGenerator](https://www.cnblogs.com/Joynic/p/13741473.html)

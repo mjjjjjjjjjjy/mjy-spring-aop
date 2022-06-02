@@ -1,6 +1,6 @@
 package 代理模式.JDK动态代理;
 
-import sun.misc.ProxyGenerator;
+//import sun.misc.ProxyGenerator;
 
 import java.io.IOException;
 import java.io.OutputStream;

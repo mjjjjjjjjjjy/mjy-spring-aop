@@ -81,7 +81,7 @@ public class 配置类配置示例Application {
 
 我们也可以通过 ProxyFactory 来手动创建代理。
 
-### ProxyFactory创建CGLIB代理
+### ProxyFactory 创建CGLIB代理
 
 ```java
 public class 配置类配置示例Application {
@@ -157,7 +157,7 @@ import org.springframework.cglib.proxy.Factory;
 import org.springframework.cglib.proxy.MethodInterceptor;
 import org.springframework.cglib.proxy.MethodProxy;
 import org.springframework.cglib.proxy.NoOp;
-
+// 多实现了SpringProxy  和 Advised。 SpringProxy是没有任何实现的，只是做了标记
 public class CglibApplication$Duck$$EnhancerBySpringCGLIB$$9da35552 extends Duck implements SpringProxy, Advised, Factory {
     private boolean CGLIB$BOUND;
     public static Object CGLIB$FACTORY_DATA;
@@ -698,6 +698,8 @@ public class CglibApplication$Duck$$EnhancerBySpringCGLIB$$9da35552 extends Duck
 
 ### ProxyFactory 生成JDK代理
 
+当被代理的类，是有父接口时，将会使用JDK代理
+
 ```java
 public class JDKApplication {
     interface Run{
@@ -769,7 +771,7 @@ import org.springframework.aop.TargetSource;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.AopConfigException;
 import org.springframework.core.DecoratingProxy;
-
+// 注意，相比较纯粹的Proxy生成的代理类，这里多实现了几个接口
 final class $Proxy0 extends Proxy implements Run, SpringProxy, Advised, DecoratingProxy {
     private static Method m1;
     private static Method m12;
@@ -1138,23 +1140,23 @@ final class $Proxy0 extends Proxy implements Run, SpringProxy, Advised, Decorati
 ### ProxyFactory核心类
 
 
-| 编号                          | 类                             | 说明                                        |
-| ------------------------------- | -------------------------------- | --------------------------------------------- |
-| ProxyFactory                  | 代理入口                       | 组织参数                                    |
-| DefaultAopProxyFactory        | ProxyFactory的父类             | 真正实现获取代理的类                        |
-| Advice                        | 通知                           | 实现业务代码的类                            |
-| Advisor                       | Advice容器                     | 定义如何去获取Advice                        |
-| CglibAopProxy                 | 基于Cglib的Aop代理             |                                             |
-| JdkDynamicAopProxy            | 基于JDK的AOP                   |                                             |
-| DefaultAdvisorChainFactory    | 获取通知链                     | 根据配置匹配对应的Interceptors              |
-| DefaultAdvisorAdapterRegistry | 通知适配器                     | 将所有的adviceor适配成为 MethodInterceptor  |
-| ReflectiveMethodInvocation    | 真正执行增强代码的地方         | 递归的方式完成所有的MethodInterceptor的调用 |
-| DynamicAdvisedInterceptor     | 包装类是                       | 将AdvisedSupport包装成为 MethodInterceptor  |
-| CglibMethodInvocation         | ReflectiveMethodInvocation子类 | 最后使用MethodProxy来完成被代理类调用       |
+| 编号                          | 类                                         | 说明                                                              |
+| ------------------------------- | -------------------------------------------- | ------------------------------------------------------------------- |
+| ProxyFactory                  | 代理入口                                   | 生成代理的入口类，通过传入的参数生成对应的代理类                  |
+| DefaultAopProxyFactory        | 代理工厂                                   | 获取实际的代理，根据条件获取JDk或者cglib代理                      |
+| Advice                        | 通知                                       | 实现业务代码的类                                                  |
+| Advisor                       | Advice容器                                 | 定义如何去获取Advice                                              |
+| CglibAopProxy                 | 基于Cglib的Aop代理                         | 用于生成cglib代理，并且提供了一系列的内部类作为 MethodInterceptor |
+| JdkDynamicAopProxy            | 基于JDK的AOP                               | 用于生成JDK代理                                                   |
+| DefaultAdvisorChainFactory    | 获取通知链                                 | 根据配置Advised匹配对应的Interceptors                             |
+| DefaultAdvisorAdapterRegistry | 通知适配器                                 | 将所有的adviceor适配成为 MethodInterceptor                        |
+| ReflectiveMethodInvocation    | 真正执行增强代码的地方                     | 递归的方式完成所有的MethodInterceptor的调用                       |
+| CglibMethodInvocation         | ReflectiveMethodInvocation子类             | 主要用于cglib的快速调用最后使用MethodProxy来完成被代理类调用      |
+| DynamicAdvisedInterceptor     | cglib动态代理的第一个interceptor(callback) | 将AdvisedSupport包装成为 MethodInterceptor                        |
 
 从前面可以知道，ProxyFactory具体的增强是由Advice去实现的，我们来看下Advice有什么功能。
 
-![Advice](./assets/从JAVA反射技术到Spring AOP-1646106847080.png)
+![Advice](./assets/1646106847080.png)
 
 Advice是一个接口，本身没有任何方法，全部靠其子接口去实现。
 
@@ -2115,7 +2117,7 @@ JdkDynamicAopProxy是基于JDK实现的代理，在类有接口的时候，会�
 
 可知JdkDynamicAopProxy本身也实现了InvocationHandler。因此重点看是如何实现InvocationHandler功能的。
 
-```
+```java
 final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializable {
 
 
@@ -2435,3 +2437,4 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 }
 ```
 
+###

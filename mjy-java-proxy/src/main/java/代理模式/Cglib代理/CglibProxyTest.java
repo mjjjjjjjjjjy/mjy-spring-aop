@@ -45,7 +45,10 @@ public class CglibProxyTest {
         public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
             System.out.println("执行代理方法--前 方法为"+method.getName());
 //            Object invoke = method.invoke(target, objects);
+            //invoke用于传入被代理类对象
             Object invoke = methodProxy.invoke(target, objects);
+
+            //也可以传入代理的对象，但是必须使用invokeSuper，这样就会直接去调用父类方法，不会引起循环引用
 //            Object invoke = methodProxy.invokeSuper(o, objects);
 
             System.out.println("执行代理方法--后 ");
@@ -56,6 +59,7 @@ public class CglibProxyTest {
     public static void main(String[] args) {
         System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,"./");
         CglibService cglibService = new CglibService();
+        //验证属性
         cglibService.setA(1);
         CglibServiceInterceptor cglibServiceInterceptor = new CglibServiceInterceptor(cglibService);
 

@@ -52,14 +52,14 @@ JAVA是面向对象编程的，因此我们学习和工作的过程中，常常�
 ##反射机制中常用的类
 
 
-| 类                            | 说明 |
-| ------------------------------- |----|
-| java.lang.Class               | 类  |
-| java.lang.reflect.Constructor | 构造器 |
-| java.lang.reflect.Field       | 属性 |
-| java.lang.reflect.Method      | 方法 |
-| java.lang.reflect.Modifier    | 修饰符 |
-| java.lang.annotation.Annotation | 注解 |
+| 类                              | 说明   |
+| --------------------------------- | -------- |
+| java.lang.Class                 | 类     |
+| java.lang.reflect.Constructor   | 构造器 |
+| java.lang.reflect.Field         | 属性   |
+| java.lang.reflect.Method        | 方法   |
+| java.lang.reflect.Modifier      | 修饰符 |
+| java.lang.annotation.Annotation | 注解   |
 
 以上类都在rt.ja包下
 
@@ -108,12 +108,12 @@ class ClassA {
 ## Class类中的method方法
 
 
-| 序号  | 方法                                                             | 作用                             |
-|-----|----------------------------------------------------------------|--------------------------------|
-| 1   | Method getMethod(String name, Class... parameterTypes)         | 查找public修饰符的指定方法，包含父类和接口       |
-| 2   | Method[] getMethods()                                          | 获取所有的public修饰的方法，包含父类和接口       |
-| 3   | Method getDeclaredMethod(String name, Class... parameterTypes) | 查找指定的方法，包含接口，但是不包含父类           |
-| 4   | Method[] getDeclaredMethods()                                  | 获取任意修饰符的的方法，包含接口的方法，但是不包含父类的方法 |
+| 序号 | 方法                                                           | 作用                                                         |
+| ------ | ---------------------------------------------------------------- | -------------------------------------------------------------- |
+| 1    | Method getMethod(String name, Class... parameterTypes)         | 查找public修饰符的指定方法，包含父类和接口                   |
+| 2    | Method[] getMethods()                                          | 获取所有的public修饰的方法，包含父类和接口                   |
+| 3    | Method getDeclaredMethod(String name, Class... parameterTypes) | 查找指定的方法，包含接口，但是不包含父类                     |
+| 4    | Method[] getDeclaredMethods()                                  | 获取任意修饰符的的方法，包含接口的方法，但是不包含父类的方法 |
 
 java.lang.reflect.Method 常用于对某个对象的方法进行增强的情况。具体用法如下：
 
@@ -152,19 +152,20 @@ class MethodClass{
 ```
 
 ## Class类中获取注解的方法
+
 参考：[AnnotatedElement](https://www.jianshu.com/p/953e26463fbc)
 
 Class实现了AnnotatedElement接口，提供了若干获取类上注解的方法。
 
 
-| 序号  | 方法                                                                                | 作用                |
-|-----|-----------------------------------------------------------------------------------|-------------------|
-| 1   | Annotation[] getAnnotations()                                                     | 获取本类和父类可继承的所有注解   |
-| 2   | <A extends Annotation> A getAnnotation(Class<A> annotationClass)                  | 根据类型获取注解          |
-| 3   | <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass)         | 会检查修饰该方法对象的注解是否为可重复类型注解，如果是则会返回修饰该方法对象的一个或多个注解      |
-| 4   | <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass)          | 只获取本类的注解，忽略继承来的注解 |
-| 5   | <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) | 只获取本类的注解，忽略继承来的注解 |
-| 6   | boolean isAnnotationPresent(Class<? extends Annotation> annotationClass)          | 判断注解是否存在          |
+| 序号 | 方法                                                                              | 作用                                                                                         |
+| ------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1    | Annotation[] getAnnotations()                                                     | 获取本类和父类可继承的所有注解                                                               |
+| 2    | <A extends Annotation> A getAnnotation(Class<A> annotationClass)                  | 根据类型获取注解                                                                             |
+| 3    | <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass)         | 会检查修饰该方法对象的注解是否为可重复类型注解，如果是则会返回修饰该方法对象的一个或多个注解 |
+| 4    | <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass)          | 只获取本类的注解，忽略继承来的注解                                                           |
+| 5    | <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) | 只获取本类的注解，忽略继承来的注解                                                           |
+| 6    | boolean isAnnotationPresent(Class<? extends Annotation> annotationClass)          | 判断注解是否存在                                                                             |
 
 需要说明的是，java.lang.annotation.Annotation是所有注解的父接口，就像Obect的角色一样。
 
@@ -178,7 +179,9 @@ private static class AnnotationData {
         final Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 }
 ```
+
 应用举例
+
 ```java
 public class 获取注解 {
 
@@ -272,11 +275,9 @@ public class 反射在实际项目中的应用 {
 }
 ```
 
-#代理
+# 代理
 
 在java中，代理的本质是在不影响目标类功能的基础上对目标类进行增强。
-
-##参考
 
 代理分为静态代理和动态代理。
 
@@ -340,12 +341,13 @@ class Proxy implements Printer{
 
 ## 动态代理（dynamic proxy）
 
-目前常用的动态代理有两种方式，一种是直接使用JDK自带的代理方式
+目前常用的动态代理有两种方式，一种是直接使用JDK自带的代理方式，另一种是CGLIB动态代理
 
 ### JDK动态代理
 
 JDK代理的核心类为java.lang.reflect.Proxy。其中方法并不是很多。
-![Proxy类结构](./assets/从JAVA反射技术到Spring AOP-1646034317552.png)
+
+![Proxy](./assets/1646034317552.png)
 
 其中核心方法为：
 
@@ -418,12 +420,13 @@ public class JDK动态代理最简单示例 {
 ```
 
 #### JDK反编译类
+
 生成的代理类反编译如下：
 
 ```java
 
 final class $Proxy0 extends Proxy implements Printer {
-    
+  
     private static Method m1;
     private static Method m3;
     private static Method m2;
@@ -491,14 +494,15 @@ final class $Proxy0 extends Proxy implements Printer {
 可以看到，代理类继承了Proxy类，在实例化的时候把 InvocationHandler 赋予父类实例。另外定义了一定数量的Method变量，在static的代码块初始化了Object类和接口Printer的所有方法。
 另外代理类实现了Printer接口的所有方法，每个方法，实际是去调用了InvocationHandler实例的invoke方法，这样就实现了代理的功能。
 
-
-
 #### Proxy 类如何生成代理类
+
 查看 Proxy 代码，很容易找到代理类是由ProxyClassFactory类具体生成的。
 最重要的代码是
+
 ```java
 byte[] proxyClassFile = ProxyGenerator.generateProxyClass(proxyName, interfaces, accessFlags);
 ```
+
 参考 [java动态代理ProxyGenerator](https://www.cnblogs.com/Joynic/p/13741473.html) 手动写一个demo
 
 ```java
@@ -534,6 +538,7 @@ public class ProxyGeneratorTest {
     }
 }
 ```
+
 输出的类反编译
 
 ```java
@@ -615,12 +620,12 @@ public class $Proxy extends Proxy implements TestInf {
 }
 
 ```
+
 #### ProxyGenerator
+
 [源码](https://github.com/JetBrains/jdk8u_jdk/blob/master/src/share/classes/sun/misc/ProxyGenerator.java)
 具体代码就不展示了。可以参考
-[JDK动态代理之ProxyGenerator生成代理类的字节码文件解析](https://www.jb51.net/article/135597.htm)
-
-
+[JDK动态代理之ProxyGenerator生成代理类的字节码文件解析](https://blog.csdn.net/qq_43259865/article/details/113944901)
 
 ### Cglib动态代理。
 
@@ -638,7 +643,7 @@ Cglib动态代理的基本原理和JDK的相似。
 </dependencies>
 ```
 
-核心入口类为 Enhancer
+核心入口类为 Enhancer  简单用法如下
 
 ```java
 public class CglibProxyTest {
@@ -688,7 +693,6 @@ public class CglibProxyTest {
 
 #### Cglib生成的代理类反编译
 
-
 ```java
 import java.lang.reflect.Method;
 import net.sf.cglib.core.ReflectUtils;
@@ -699,15 +703,20 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import 代理模式.Cglib代理.CglibProxyTest.CglibService;
 
+//代理类继承了被代理类
 public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends CglibService implements Factory {
+    //是否已经绑定拦截器，如果已经绑定，就设为true
     private boolean CGLIB$BOUND;
     public static Object CGLIB$FACTORY_DATA;
+    //线程变量，用于存储拦截器
     private static final ThreadLocal CGLIB$THREAD_CALLBACKS;
     private static final Callback[] CGLIB$STATIC_CALLBACKS;
+    //拦截器，在传入的callback数组中的第一个
     private MethodInterceptor CGLIB$CALLBACK_0;
     private static Object CGLIB$CALLBACK_FILTER;
     private static final Method CGLIB$update$0$Method;
     private static final MethodProxy CGLIB$update$0$Proxy;
+    //空数组，用于无参的方法
     private static final Object[] CGLIB$emptyArgs;
     private static final Method CGLIB$find$1$Method;
     private static final MethodProxy CGLIB$find$1$Proxy;
@@ -719,15 +728,16 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
     private static final MethodProxy CGLIB$hashCode$4$Proxy;
     private static final Method CGLIB$clone$5$Method;
     private static final MethodProxy CGLIB$clone$5$Proxy;
-
+    //静态方法，在静态代码块中被执行
     static void CGLIB$STATICHOOK1() {
         CGLIB$THREAD_CALLBACKS = new ThreadLocal();
         CGLIB$emptyArgs = new Object[0];
         //代理的Class
         Class var0 = Class.forName("代理模式.Cglib代理.CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a");
-        Class var1;
+        Class var1;//在下一样中赋值（var1 = Class.forName("java.lang.Object")).getDeclaredMethods()）；
         Method[] var10000 = ReflectUtils.findMethods(new String[]{"equals", "(Ljava/lang/Object;)Z", "toString", "()Ljava/lang/String;", "hashCode", "()I", "clone", "()Ljava/lang/Object;"}, (var1 = Class.forName("java.lang.Object")).getDeclaredMethods());
         CGLIB$equals$2$Method = var10000[0];
+        // 使用MethodProxy来创建一个方法调用的代理类，避免通过反射来调用。这个方法，可以使用代理类来调用，最终映射为被代理的调用
         CGLIB$equals$2$Proxy = MethodProxy.create(var1, var0, "(Ljava/lang/Object;)Z", "equals", "CGLIB$equals$2");
         CGLIB$toString$3$Method = var10000[1];
         CGLIB$toString$3$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/String;", "toString", "CGLIB$toString$3");
@@ -743,7 +753,7 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
         CGLIB$find$1$Method = var10000[1];
         CGLIB$find$1$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/Object;", "find", "CGLIB$find$1");
     }
-
+    //代理类直接调用父类的方法，
     final void CGLIB$update$0() {
         super.update();
     }
@@ -756,8 +766,10 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
         }
 
         if (var10000 != null) {
+            //拦截器中，需要传入被查询的方法
             var10000.intercept(this, CGLIB$update$0$Method, CGLIB$emptyArgs, CGLIB$update$0$Proxy);
         } else {
+            //假如没有拦截器，则直接调用父类的方法。
             super.update();
         }
     }
@@ -841,8 +853,9 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
 
         return var10000 != null ? var10000.intercept(this, CGLIB$clone$5$Method, CGLIB$emptyArgs, CGLIB$clone$5$Proxy) : super.clone();
     }
-
+    //获取被代理的方法
     public static MethodProxy CGLIB$findMethodProxy(Signature var0) {
+        //toString 已经被重写
         String var10000 = var0.toString();
         switch(var10000.hashCode()) {
         case -1949253108:
@@ -878,8 +891,9 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
 
         return null;
     }
-
+    // 构造方法，一般不直接使用这个，而是使用new instance,先给线程变量赋值
     public CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a() {
+        //无参构造方法，从线程变量获取拦截器并且绑定到当前类中
         CGLIB$BIND_CALLBACKS(this);
     }
 
@@ -893,16 +907,17 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
 
     private static final void CGLIB$BIND_CALLBACKS(Object var0) {
         CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a var1 = (CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a)var0;
-        if (!var1.CGLIB$BOUND) {
+        if (!var1.CGLIB$BOUND) { //如果已经处理过， 就不再处理
             var1.CGLIB$BOUND = true;
             Object var10000 = CGLIB$THREAD_CALLBACKS.get();
+            //从当前线程中获取callbacks
             if (var10000 == null) {
                 var10000 = CGLIB$STATIC_CALLBACKS;
                 if (var10000 == null) {
                     return;
                 }
             }
-            //给类变量赋值。CGLIB$CALLBACK_0为第一个callback
+            //给类变量赋值。CGLIB$CALLBACK_0为第一个callback 对类型进行强转。如果有filter,这里会有多个MethodInterceptor，对应不同的下标
             var1.CGLIB$CALLBACK_0 = (MethodInterceptor)((Callback[])var10000)[0];
         }
 
@@ -911,6 +926,7 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
     public Object newInstance(Callback[] var1) {
         CGLIB$SET_THREAD_CALLBACKS(var1);
         CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a var10000 = new CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a();
+        //清空线程变量
         CGLIB$SET_THREAD_CALLBACKS((Callback[])null);
         return var10000;
     }
@@ -980,7 +996,19 @@ public class CglibProxyTest$CglibService$$EnhancerByCGLIB$$2caa56a extends Cglib
 
 ```java
 public class FastClassDemo {
-    //在代理拦截器处被调用
+    //根据方法的签名，获取相对应的所以
+    public int getIndex(String signature) {
+        switch (signature.hashCode()) {
+            case 3078479:
+                //方法1
+                return 1;
+            case 3108270:
+                //方法1
+                return 2;
+        }
+        return -1;
+    }
+    //根据传入的方法索引，调用指定的方法。
 	public Object invoke(int index, Object o, Object[] ol) {
 		Target t = (Target) o;
 		switch (index) {
@@ -994,18 +1022,492 @@ public class FastClassDemo {
 		}
 		return null;
 	}
-    //将方法通过一定的方法，生成唯一的签名，可以存储到上层类中
-	public int getIndex(String signature) {
-		switch (signature.hashCode()) {
-		case 3078479:
-            //方法1
-			return 1;
-		case 3108270:
-            //方法1
-			return 2;
-		}
-		return -1;
-	}
+  
+}
+```
+
+以上用户，跟proxy的用法基本一致，
+但是cglib还有更多的用法，比如说可以接收更多的过滤器，对应不同的方法，可以使用不同的过滤器来执行业务逻辑。
+
+```java
+public class Enhancer各种方法探索 {
+
+    interface Animal {
+         Object eat();
+    }
+
+    static class Duck {
+        public Object find(){
+            System.out.println("原方法-查找");
+            return new Object();
+        }
+    }
+
+    static class CglibServiceInterceptor implements MethodInterceptor {
+
+        public Object target;
+
+        public CglibServiceInterceptor(Object target) {
+            this.target = target;
+        }
+
+        @Override
+        public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+            String name = method.getName();
+            System.out.println("CglibServiceInterceptor 执行代理方法--前 方法为"+ name);
+            Object invoke = methodProxy.invoke(target, objects);
+            System.out.println("CglibServiceInterceptor 执行代理方法--后 ");
+            return invoke;
+        }
+    }
+
+    static class CglibServiceInterceptor2 implements MethodInterceptor {
+        @Override
+        public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+            String name = method.getName();
+            System.out.println("CglibServiceInterceptor2 执行代理方法--前 方法为"+ name);
+            Object invoke = null;
+            System.out.println("CglibServiceInterceptor2 执行接口的方法");
+
+            System.out.println("CglibServiceInterceptor2 执行代理方法--后 ");
+            return invoke;
+        }
+    }
+
+
+
+
+    public static class 添加过滤器 {
+        public static void main(String[] args) {
+            System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,"./");
+            CallbackFilter filter = new CallbackFilter() {
+                //返回过滤数组的下标
+                @Override
+                public int accept(Method method) {
+                    if (method.getName().equals("eat")){
+                        return 1;
+                    }
+                    return 0;
+                }
+            };
+
+            Duck duck = new Duck();
+            //验证属性
+            Enhancer各种方法探索.CglibServiceInterceptor cglibServiceInterceptor = new Enhancer各种方法探索.CglibServiceInterceptor(duck);
+            Enhancer各种方法探索.CglibServiceInterceptor2 cglibServiceInterceptor2 = new Enhancer各种方法探索.CglibServiceInterceptor2();
+
+            Enhancer enhancer = new Enhancer();
+            enhancer.setSuperclass(Duck.class);
+            //提供两个callbacks
+            enhancer.setCallbacks(new Callback[]{cglibServiceInterceptor, cglibServiceInterceptor2});
+            //添加代理方法过滤器
+            enhancer.setCallbackFilter(filter);
+            //添加接口
+            enhancer.setInterfaces(new Class[]{Animal.class});
+            //使用接口的方法
+            Animal proxyInstance = (Animal) enhancer.create();
+            proxyInstance.eat();
+            //父类方法
+            Duck d = (Duck) proxyInstance;
+            d.find();
+        }
+    }
+}
+
+
+```
+
+生成的代理类：
+
+```java
+
+import java.lang.reflect.Method;
+import net.sf.cglib.core.ReflectUtils;
+import net.sf.cglib.core.Signature;
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+import 代理模式.Cglib代理.Enhancer各种方法探索.Animal;
+import 代理模式.Cglib代理.Enhancer各种方法探索.Duck;
+
+public class Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad extends Duck implements Animal, Factory {
+    private boolean CGLIB$BOUND;
+    public static Object CGLIB$FACTORY_DATA;
+    private static final ThreadLocal CGLIB$THREAD_CALLBACKS;
+    private static final Callback[] CGLIB$STATIC_CALLBACKS;
+    private MethodInterceptor CGLIB$CALLBACK_0;
+    private MethodInterceptor CGLIB$CALLBACK_1;
+    private static Object CGLIB$CALLBACK_FILTER;
+    private static final Method CGLIB$find$0$Method;
+    private static final MethodProxy CGLIB$find$0$Proxy;
+    private static final Object[] CGLIB$emptyArgs;
+    private static final Method CGLIB$equals$1$Method;
+    private static final MethodProxy CGLIB$equals$1$Proxy;
+    private static final Method CGLIB$toString$2$Method;
+    private static final MethodProxy CGLIB$toString$2$Proxy;
+    private static final Method CGLIB$hashCode$3$Method;
+    private static final MethodProxy CGLIB$hashCode$3$Proxy;
+    private static final Method CGLIB$clone$4$Method;
+    private static final MethodProxy CGLIB$clone$4$Proxy;
+    private static final Method CGLIB$eat$5$Method;
+    private static final MethodProxy CGLIB$eat$5$Proxy;
+
+    static void CGLIB$STATICHOOK1() {
+        CGLIB$THREAD_CALLBACKS = new ThreadLocal();
+        CGLIB$emptyArgs = new Object[0];
+        Class var0 = Class.forName("代理模式.Cglib代理.Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad");
+        Class var1;
+        CGLIB$find$0$Method = ReflectUtils.findMethods(new String[]{"find", "()Ljava/lang/Object;"}, (var1 = Class.forName("代理模式.Cglib代理.Enhancer各种方法探索$Duck")).getDeclaredMethods())[0];
+        CGLIB$find$0$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/Object;", "find", "CGLIB$find$0");
+        Method[] var10000 = ReflectUtils.findMethods(new String[]{"equals", "(Ljava/lang/Object;)Z", "toString", "()Ljava/lang/String;", "hashCode", "()I", "clone", "()Ljava/lang/Object;"}, (var1 = Class.forName("java.lang.Object")).getDeclaredMethods());
+        CGLIB$equals$1$Method = var10000[0];
+        CGLIB$equals$1$Proxy = MethodProxy.create(var1, var0, "(Ljava/lang/Object;)Z", "equals", "CGLIB$equals$1");
+        CGLIB$toString$2$Method = var10000[1];
+        CGLIB$toString$2$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/String;", "toString", "CGLIB$toString$2");
+        CGLIB$hashCode$3$Method = var10000[2];
+        CGLIB$hashCode$3$Proxy = MethodProxy.create(var1, var0, "()I", "hashCode", "CGLIB$hashCode$3");
+        CGLIB$clone$4$Method = var10000[3];
+        CGLIB$clone$4$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/Object;", "clone", "CGLIB$clone$4");
+        CGLIB$eat$5$Method = ReflectUtils.findMethods(new String[]{"eat", "()Ljava/lang/Object;"}, (var1 = Class.forName("代理模式.Cglib代理.Enhancer各种方法探索$Animal")).getDeclaredMethods())[0];
+        CGLIB$eat$5$Proxy = MethodProxy.create(var1, var0, "()Ljava/lang/Object;", "eat", "CGLIB$eat$5");
+    }
+
+    final Object CGLIB$find$0() {
+        return super.find();
+    }
+    public final Object find() {
+        //默认情况下，使用的是第一个拦截器
+        MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+        if (var10000 == null) {
+            CGLIB$BIND_CALLBACKS(this);
+            var10000 = this.CGLIB$CALLBACK_0;
+        }
+
+        return var10000 != null ? var10000.intercept(this, CGLIB$find$0$Method, CGLIB$emptyArgs, CGLIB$find$0$Proxy) : super.find();
+    }
+
+    final boolean CGLIB$equals$1(Object var1) {
+        return super.equals(var1);
+    }
+
+    public final boolean equals(Object var1) {
+        MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+        if (var10000 == null) {
+            CGLIB$BIND_CALLBACKS(this);
+            var10000 = this.CGLIB$CALLBACK_0;
+        }
+
+        if (var10000 != null) {
+            Object var2 = var10000.intercept(this, CGLIB$equals$1$Method, new Object[]{var1}, CGLIB$equals$1$Proxy);
+            return var2 == null ? false : (Boolean)var2;
+        } else {
+            return super.equals(var1);
+        }
+    }
+
+    final String CGLIB$toString$2() {
+        return super.toString();
+    }
+
+    public final String toString() {
+        MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+        if (var10000 == null) {
+            CGLIB$BIND_CALLBACKS(this);
+            var10000 = this.CGLIB$CALLBACK_0;
+        }
+
+        return var10000 != null ? (String)var10000.intercept(this, CGLIB$toString$2$Method, CGLIB$emptyArgs, CGLIB$toString$2$Proxy) : super.toString();
+    }
+
+    final int CGLIB$hashCode$3() {
+        return super.hashCode();
+    }
+
+    public final int hashCode() {
+        MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+        if (var10000 == null) {
+            CGLIB$BIND_CALLBACKS(this);
+            var10000 = this.CGLIB$CALLBACK_0;
+        }
+
+        if (var10000 != null) {
+            Object var1 = var10000.intercept(this, CGLIB$hashCode$3$Method, CGLIB$emptyArgs, CGLIB$hashCode$3$Proxy);
+            return var1 == null ? 0 : ((Number)var1).intValue();
+        } else {
+            return super.hashCode();
+        }
+    }
+
+    final Object CGLIB$clone$4() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+    protected final Object clone() throws CloneNotSupportedException {
+        MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+        if (var10000 == null) {
+            CGLIB$BIND_CALLBACKS(this);
+            var10000 = this.CGLIB$CALLBACK_0;
+        }
+
+        return var10000 != null ? var10000.intercept(this, CGLIB$clone$4$Method, CGLIB$emptyArgs, CGLIB$clone$4$Proxy) : super.clone();
+    }
+
+    final Object CGLIB$eat$5() {
+        return super.eat();
+    }
+
+    public final Object eat() {
+        // 这里使用的是第二个拦截器
+        MethodInterceptor var10000 = this.CGLIB$CALLBACK_1;
+        if (var10000 == null) {
+            CGLIB$BIND_CALLBACKS(this);
+            var10000 = this.CGLIB$CALLBACK_1;
+        }
+
+        return var10000 != null ? var10000.intercept(this, CGLIB$eat$5$Method, CGLIB$emptyArgs, CGLIB$eat$5$Proxy) : super.eat();
+    }
+
+    public static MethodProxy CGLIB$findMethodProxy(Signature var0) {
+        String var10000 = var0.toString();
+        switch(var10000.hashCode()) {
+        case -508378822:
+            if (var10000.equals("clone()Ljava/lang/Object;")) {
+                return CGLIB$clone$4$Proxy;
+            }
+            break;
+        case 288953238:
+            if (var10000.equals("find()Ljava/lang/Object;")) {
+                return CGLIB$find$0$Proxy;
+            }
+            break;
+        case 1826985398:
+            if (var10000.equals("equals(Ljava/lang/Object;)Z")) {
+                return CGLIB$equals$1$Proxy;
+            }
+            break;
+        case 1913648695:
+            if (var10000.equals("toString()Ljava/lang/String;")) {
+                return CGLIB$toString$2$Proxy;
+            }
+            break;
+        case 1956159413:
+            if (var10000.equals("eat()Ljava/lang/Object;")) {
+                return CGLIB$eat$5$Proxy;
+            }
+            break;
+        case 1984935277:
+            if (var10000.equals("hashCode()I")) {
+                return CGLIB$hashCode$3$Proxy;
+            }
+        }
+
+        return null;
+    }
+
+    public Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad() {
+        CGLIB$BIND_CALLBACKS(this);
+    }
+
+    public static void CGLIB$SET_THREAD_CALLBACKS(Callback[] var0) {
+        CGLIB$THREAD_CALLBACKS.set(var0);
+    }
+
+    public static void CGLIB$SET_STATIC_CALLBACKS(Callback[] var0) {
+        CGLIB$STATIC_CALLBACKS = var0;
+    }
+
+    private static final void CGLIB$BIND_CALLBACKS(Object var0) {
+        Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad var1 = (Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad)var0;
+        if (!var1.CGLIB$BOUND) {
+            var1.CGLIB$BOUND = true;
+            Object var10000 = CGLIB$THREAD_CALLBACKS.get();
+            if (var10000 == null) {
+                var10000 = CGLIB$STATIC_CALLBACKS;
+                if (var10000 == null) {
+                    return;
+                }
+            }
+
+            Callback[] var10001 = (Callback[])var10000;
+            //初始化了两个拦截器
+            var1.CGLIB$CALLBACK_1 = (MethodInterceptor)((Callback[])var10000)[1];
+            var1.CGLIB$CALLBACK_0 = (MethodInterceptor)var10001[0];
+        }
+
+    }
+
+    public Object newInstance(Callback[] var1) {
+        CGLIB$SET_THREAD_CALLBACKS(var1);
+        Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad var10000 = new Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad();
+        CGLIB$SET_THREAD_CALLBACKS((Callback[])null);
+        return var10000;
+    }
+
+    public Object newInstance(Callback var1) {
+        throw new IllegalStateException("More than one callback object required");
+    }
+
+    public Object newInstance(Class[] var1, Object[] var2, Callback[] var3) {
+        CGLIB$SET_THREAD_CALLBACKS(var3);
+        Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad var10000 = new Enhancer各种方法探索$Duck$$EnhancerByCGLIB$$9ee760ad;
+        switch(var1.length) {
+        case 0:
+            var10000.<init>();
+            CGLIB$SET_THREAD_CALLBACKS((Callback[])null);
+            return var10000;
+        default:
+            throw new IllegalArgumentException("Constructor not found");
+        }
+    }
+
+    public Callback getCallback(int var1) {
+        CGLIB$BIND_CALLBACKS(this);
+        MethodInterceptor var10000;
+        switch(var1) {
+        case 0:
+            var10000 = this.CGLIB$CALLBACK_0;
+            break;
+        case 1:
+            var10000 = this.CGLIB$CALLBACK_1;
+            break;
+        default:
+            var10000 = null;
+        }
+
+        return var10000;
+    }
+
+    public void setCallback(int var1, Callback var2) {
+        switch(var1) {
+        case 0:
+            this.CGLIB$CALLBACK_0 = (MethodInterceptor)var2;
+            break;
+        case 1:
+            this.CGLIB$CALLBACK_1 = (MethodInterceptor)var2;
+        }
+
+    }
+
+    public Callback[] getCallbacks() {
+        CGLIB$BIND_CALLBACKS(this);
+        return new Callback[]{this.CGLIB$CALLBACK_0, this.CGLIB$CALLBACK_1};
+    }
+
+    public void setCallbacks(Callback[] var1) {
+        this.CGLIB$CALLBACK_0 = (MethodInterceptor)var1[0];
+        this.CGLIB$CALLBACK_1 = (MethodInterceptor)var1[1];
+    }
+
+    static {
+        CGLIB$STATICHOOK1();
+    }
+}
+
+
+```
+
+另外，需要注意的是，代理类还实现了Factory接口。提供了以下一系列的方法。主要用于快速生成一个相同的代理类的实例。需要传入Callback。
+
+```java
+public interface Factory {
+    /**
+     * Creates new instance of the same type, using the no-arg constructor.
+     * The class of this object must have been created using a single Callback type.
+     * If multiple callbacks are required an exception will be thrown.
+     * @param callback the new interceptor to use
+     * @return new instance of the same type
+     */   
+    Object newInstance(Callback callback);
+  
+    /**
+     * Creates new instance of the same type, using the no-arg constructor.
+     * @param callbacks the new callbacks(s) to use
+     * @return new instance of the same type
+     */   
+    Object newInstance(Callback[] callbacks);
+
+    /**
+     * Creates a new instance of the same type, using the constructor
+     * matching the given signature.
+     * @param types the constructor argument types
+     * @param args the constructor arguments
+     * @param callbacks the new interceptor(s) to use
+     * @return new instance of the same type
+     */
+    Object newInstance(Class[] types, Object[] args, Callback[] callbacks);
+
+    /**
+     * Return the <code>Callback</code> implementation at the specified index.
+     * @param index the callback index
+     * @return the callback implementation
+     */
+    Callback getCallback(int index);
+
+    /**
+     * Set the callback for this object for the given type.
+     * @param index the callback index to replace
+     * @param callback the new callback
+     */
+    void setCallback(int index, Callback callback);
+
+    /**
+     * Replace all of the callbacks for this object at once.
+     * @param callbacks the new callbacks(s) to use
+     */
+    void setCallbacks(Callback[] callbacks);
+
+    /**
+     * Get the current set of callbacks for ths object.
+     * @return a new array instance
+     */   
+    Callback[] getCallbacks();
+}
+```
+
+假如我们是先拿到了一个代理类的Class，可以如下进行实例化
+
+```java
+public static class 传入的回调是类而不是实例 {
+    public static void main(String[] args) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,"./");
+        CallbackFilter filter = new CallbackFilter() {
+            //返回过滤数组的下标
+            @Override
+            public int accept(Method method) {
+                if (method.getName().equals("eat")){
+                    return 1;
+                }
+                return 0;
+            }
+        };
+
+        Duck duck = new Duck();
+        //验证属性
+        Enhancer各种方法探索.CglibServiceInterceptor cglibServiceInterceptor = new Enhancer各种方法探索.CglibServiceInterceptor(duck);
+        Enhancer各种方法探索.CglibServiceInterceptor2 cglibServiceInterceptor2 = new Enhancer各种方法探索.CglibServiceInterceptor2();
+
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(Duck.class);
+        //提供两个callbacks
+        enhancer.setCallbackTypes(new Class[]{CglibServiceInterceptor.class, CglibServiceInterceptor2.class});
+        //添加代理方法过滤器
+        enhancer.setCallbackFilter(filter);
+        //添加接口
+        enhancer.setInterfaces(new Class[]{Animal.class});
+        //使用接口的方法
+        Class aClass = enhancer.createClass();
+        Object o1 = aClass.newInstance();
+        Factory factory = (Factory) o1;
+        Object o = factory.newInstance(new Callback[]{cglibServiceInterceptor, cglibServiceInterceptor2});
+        Animal proxyInstance = (Animal) o;
+        proxyInstance.eat();
+        //父类方法
+        Duck d = (Duck) proxyInstance;
+        d.find();
+        // 从而可以知道，如果只需要生成代理类，还不需要实例，可以使用setCallbackTypes代替setCallbacks，当需要实例化的时候，才传入具体的拦截器。
+        // 而且 本身GCLIB的代理类实现了Factory，可以用来生成具体的实例。
+    }
 }
 ```
 
@@ -1025,18 +1527,22 @@ import net.sf.cglib.core.Signature;
 import net.sf.cglib.reflect.FastClass;
 
 public class MethodProxy {
-    //被代理类的方法签名
+    //被代理类的方法签名。方法名称+描述
     private Signature sig1;
-    //代理类的方法签名
+    //代理类的方法签名。方法名称+描述
     private Signature sig2;
     //创建代理的参数
     private CreateInfo createInfo;
-    
+  
     private final Object initLock = new Object();
+    //用于存放最终生成的FastClass实例和索引
     private volatile FastClassInfo fastClassInfo;
-    
+  
     /**
-     * c1 被代理类的Class c2 代理类的Class  desc：参数和返回值  name1： 被代理类的方法名，代理类重写， name2为代理类的方法名，直接调用父类方法。
+     * 
+     * C1对应name1,用于构建被代理类的fastClass。最用被 invoke()方法使用。
+     * c2对应name2,用于构建代理类的fastClass。最终被 invokeSuper()方法使用。
+     * 
      */
     public static MethodProxy create(Class c1, Class c2, String desc, String name1, String name2) {
         //封装了参数，但是此时还没有初始化
@@ -1052,7 +1558,7 @@ public class MethodProxy {
      */
     private void init()
     {
-       
+   
         if (fastClassInfo == null)
         {
             synchronized (initLock)
@@ -1066,9 +1572,9 @@ public class MethodProxy {
                     fci.f1 = helper(ci, ci.c1);
                     //处理代理类的Class，给原始代理类实例调用
                     fci.f2 = helper(ci, ci.c2);
-                    //获取索引
+                    //拿到了被代理类的索引  sig1：update()V
                     fci.i1 = fci.f1.getIndex(sig1);
-                    //说去所以
+                    //已经拿到了代理类的索引 sig2： CGLIB$update$0()V
                     fci.i2 = fci.f2.getIndex(sig2);
                     fastClassInfo = fci;
                     createInfo = null;
@@ -1094,7 +1600,7 @@ public class MethodProxy {
         NamingPolicy namingPolicy;
         GeneratorStrategy strategy;
         boolean attemptLoad;
-        
+  
         public CreateInfo(Class c1, Class c2)
         {
             this.c1 = c1;
@@ -1121,14 +1627,14 @@ public class MethodProxy {
 
     /**
      * Invoke the original method, on a different object of the same type.
-     * @param obj 被代理类的实例，不能使用MethodInterceptor中的第一个参数，会造成村换调用
+     * @param obj 被代理类的实例，
      * @param args 参数
      */
     public Object invoke(Object obj, Object[] args) throws Throwable {
         try {
             init();
             FastClassInfo fci = fastClassInfo;
-            //调用的是fastClass的Invoke方法，跟调原生方法是一样的
+            //调用的是fastClass的Invoke方法，跟调原生方法是一样的。把索引传进去，直接调用指定的方法
             return fci.f1.invoke(fci.i1, obj, args);
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
@@ -1155,79 +1661,15 @@ public class MethodProxy {
     }
 }
 ```
+
 #### FastClass类
-里面有Generator，专门用来动态生成 FastClass 子类。
-```java
-abstract public class FastClass
-{
-    private Class type;
 
-    protected FastClass() {
-        throw new Error("Using the FastClass empty constructor--please report to the cglib-devel mailing list");
-    }
+里面有Generator，专门用来动态生成 FastClass 子类。具体源码就不看了
 
-    protected FastClass(Class type) {
-        this.type = type;
-    }
-
-    public static FastClass create(Class type) {
-    
-        return create(type.getClassLoader(),type);
-        
-    }
-    public static FastClass create(ClassLoader loader, Class type) {
-        Generator gen = new Generator();
-        gen.setType(type);
-        gen.setClassLoader(loader);
-        return gen.create();
-    }
-
-    //生成器
-    public static class Generator extends AbstractClassGenerator
-    {
-        private static final Source SOURCE = new Source(FastClass.class.getName());
-        private Class type;
-        
-        public Generator() {
-            super(SOURCE);
-        }
-
-        public void setType(Class type) {
-            this.type = type;
-        }
-        
-        public FastClass create() {
-            setNamePrefix(type.getName());
-            return (FastClass)super.create(type.getName());
-        }
-
-        protected ClassLoader getDefaultClassLoader() {
-            return type.getClassLoader();
-        }
-
-        protected ProtectionDomain getProtectionDomain() {
-        	return ReflectUtils.getProtectionDomain(type);
-        }
-
-        public void generateClass(ClassVisitor v) throws Exception {
-            new FastClassEmitter(v, getClassName(), type);
-        }
-
-        protected Object firstInstance(Class type) {
-            return ReflectUtils.newInstance(type,
-                                            new Class[]{ Class.class },
-                                            new Object[]{ this.type });
-        }
-
-        protected Object nextInstance(Object instance) {
-            return instance;
-        }
-    }
-    
-}
-```
 #### 动态生成的FastClass类的子类
+
 继承了抽象类FastClass，针对不同的类生成不同的FastClass子类。
+
 ```java
 //
 // Source code recreated from a .class file by IntelliJ IDEA
@@ -1245,7 +1687,7 @@ public class CglibProxyTest$CglibService$$FastClassByCGLIB$$7f8d7b12 extends Fas
     public CglibProxyTest$CglibService$$FastClassByCGLIB$$7f8d7b12(Class var1) {
         super(var1);
     }
-
+    //根据方法签名，值，获取方法的索引
     public int getIndex(Signature var1) {
         String var10000 = var1.toString();
         switch(var10000.hashCode()) {
@@ -1283,7 +1725,7 @@ public class CglibProxyTest$CglibService$$FastClassByCGLIB$$7f8d7b12 extends Fas
         return -1;
     }
    
-    //核心方法，调用方通过控制索引Var1，来确定调原先类实例的哪个方法。
+    //根据传入的方法索引和对象，调用对应的方法
     public Object invoke(int var1, Object var2, Object[] var3) throws InvocationTargetException {
         CglibService var10000 = (CglibService)var2;
         int var10001 = var1;
@@ -1317,6 +1759,7 @@ public class CglibProxyTest$CglibService$$FastClassByCGLIB$$7f8d7b12 extends Fas
 #### 方法签名Signature
 
 包括方法名，参数列表和返回值。
+
 ```java
 package net.sf.cglib.core;
 
@@ -1345,13 +1788,16 @@ public class Signature {
 }
 ```
 
+#### 如何生成CGLIG代理
+
+##### CallbackInfo里面定义了多种callback策略
+
 ### 两种动态代理的简单对比
 
 
-|          | JDK                                              | cglib                                             |
-|----------|--------------------------------------------------|---------------------------------------------------|
-| 入口类      | java.lang.reflect.Proxy                          | net.sf.cglib.proxy.Enhancer                       |
-| 增强类      | java.lang.reflect.InvocationHandler              | net.sf.cglib.proxy.MethodInterceptor              |
-| 是否需要实现接口 | 是                                                | 否                                                 |
-| 原理       | 利用反射机制生成一个实现代理接口的匿名类，在调用具体方法前调用InvokeHandler来处理。 | 动态代理是利用asm开源包，对代理对象类的class文件加载进来，通过修改其字节码生成子类来处理。 |
-
+|                  | JDK                                                                                 | cglib                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 入口类           | java.lang.reflect.Proxy                                                             | net.sf.cglib.proxy.Enhancer                                                                |
+| 增强类           | java.lang.reflect.InvocationHandler                                                 | net.sf.cglib.proxy.MethodInterceptor                                                       |
+| 是否需要实现接口 | 是                                                                                  | 否                                                                                         |
+| 原理             | 利用反射机制生成一个实现代理接口的匿名类，在调用具体方法前调用InvokeHandler来处理。 | 动态代理是利用asm开源包，对代理对象类的class文件加载进来，通过修改其字节码生成子类来处理。 |
